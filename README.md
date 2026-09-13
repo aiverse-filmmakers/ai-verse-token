@@ -1,7 +1,7 @@
 # AI-Verse Token
 
 **Status:** Public-beta implementation candidate
-**Version:** `@ai-verse/token@0.1.0-beta.1`
+**Version:** `@ai-verse/token@0.1.0-beta.2`
 **CLI:** `ai-verse-token`
 **Extension id:** `ai-verse-token`
 
@@ -23,7 +23,7 @@ AI-Verse Token is the canonical usage, token, timing and AI-cost telemetry owner
 From an immutable package artifact:
 
 ```bash
-npm install ./ai-verse-token-0.1.0-beta.1.tgz
+npm install ./ai-verse-token-0.1.0-beta.2.tgz
 ```
 
 For an AI-Verse OS root:
