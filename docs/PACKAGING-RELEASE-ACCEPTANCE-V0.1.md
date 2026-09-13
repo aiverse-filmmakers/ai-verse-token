@@ -1,13 +1,13 @@
 # Packaging and Release Acceptance v0.1
 
-Status: public-beta.1 release acceptance, updated 2026-09-13.
+Status: public-beta.3 release acceptance, updated 2026-09-13.
 
 ## Release shape
 
 Package:
 
 ```text
-@ai-verse/token@0.1.0-beta.2
+@ai-verse/token@0.1.0-beta.3
 ```
 
 CLI:
@@ -34,13 +34,13 @@ Source TypeScript, tests, planning fixtures and local telemetry databases are no
 A packed/local release can be installed with:
 
 ```bash
-npm install ./ai-verse-token-0.1.0-beta.2.tgz
+npm install ./ai-verse-token-0.1.0-beta.3.tgz
 ```
 
 It can also be executed without a permanent project install:
 
 ```bash
-npm exec --yes --package ./ai-verse-token-0.1.0-beta.2.tgz -- ai-verse-token --version
+npm exec --yes --package ./ai-verse-token-0.1.0-beta.3.tgz -- ai-verse-token --version
 ```
 
 After npm publication, the intended one-command native path is:
@@ -138,12 +138,12 @@ The complete suite verifies all first-release laws across focused and integratio
 
 ## Verification status
 
-The public-beta.1 normal suite passes **255 / 255** tests and the serial release-acceptance stage passes **3 / 3**, for **258 / 258** executed tests across the normal and release stages. The clean packed-install acceptance passes from the tarball artifact rather than relying on the source checkout.
+The public-beta.1 normal suite passes **256 / 256** tests and the serial release-acceptance stage passes **3 / 3**, for **259 / 259** executed tests across the normal and release stages. The clean packed-install acceptance passes from the tarball artifact rather than relying on the source checkout.
 
 Beta.1 retains ledger format **2**. It intentionally fails closed on incompatible ledger formats rather than silently mutating or guessing a migration.
 
-Local release verification on Node 22 passes the full public-beta suite plus the serial release acceptance stage. The GitHub Actions six-leg Node 22/24 cross-platform matrix is configured and contract-tested, but cannot be claimed as remotely executed until a GitHub repository exists and Actions runs it.
+Local release verification on Node 22 passes the full public-beta suite plus the serial release acceptance stage. The GitHub Actions six-leg Node 22/24 cross-platform matrix is configured and contract-tested, and beta.3 must not be sealed until the canonical GitHub Actions matrix passes.
 
 ## Final release law
 
-A first release implementation is accepted only when the full inherited suite, release acceptance tests, TypeScript check, package dry-run, link checks and diff checks are green locally. Publication and the first hosted cross-platform CI run remain distribution steps, not hidden implementation work.
+A first release implementation is accepted only when the full inherited suite, release acceptance tests, TypeScript check, package dry-run, link checks and diff checks are green locally. Publication remains a distribution step. Hosted cross-platform CI is a release gate for beta.3.
