@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import {
   COST_STATUSES,
   EXTENSION_ID,
@@ -10,11 +11,11 @@ import {
   getBuildIdentity
 } from "../dist/src/index.js";
 
-const cli = new URL("../bin/ai-verse-token.mjs", import.meta.url);
+const cli = fileURLToPath(new URL("../bin/ai-verse-token.mjs", import.meta.url));
 
 test("exports stable package identity", () => {
   assert.equal(PACKAGE_NAME, "@ai-verse/token");
-  assert.equal(PACKAGE_VERSION, "0.1.0-beta.1");
+  assert.equal(PACKAGE_VERSION, "0.1.0-beta.2");
   assert.equal(EXTENSION_ID, "ai-verse-token");
   assert.equal(PROTOCOL_VERSION, "ai-verse-token/0.1");
   assert.deepEqual(COST_STATUSES, ["ACTUAL", "CALCULATED", "UNKNOWN"]);
@@ -27,8 +28,8 @@ test("exports stable package identity", () => {
 });
 
 test("CLI help advertises implemented read and native lifecycle surfaces", () => {
-  const output = execFileSync(process.execPath, [cli.pathname, "--help"], { encoding: "utf8" });
-  assert.match(output, /AI-Verse Token 0\.1\.0-beta\.1/);
+  const output = execFileSync(process.execPath, [cli, "--help"], { encoding: "utf8" });
+  assert.match(output, /AI-Verse Token 0\.1\.0-beta\.2/);
   assert.match(output, /Usage:/);
   assert.match(output, /summary --db/);
   assert.match(output, /query --db/);
@@ -46,12 +47,12 @@ test("CLI help advertises implemented read and native lifecycle surfaces", () =>
 });
 
 test("CLI version reports package version", () => {
-  const output = execFileSync(process.execPath, [cli.pathname, "--version"], { encoding: "utf8" });
+  const output = execFileSync(process.execPath, [cli, "--version"], { encoding: "utf8" });
   assert.equal(output.trim(), PACKAGE_VERSION);
 });
 
 test("unknown CLI input fails with usage exit code", () => {
-  const result = spawnSync(process.execPath, [cli.pathname, "scan"], { encoding: "utf8" });
+  const result = spawnSync(process.execPath, [cli, "scan"], { encoding: "utf8" });
   assert.equal(result.status, 2);
   assert.match(result.stderr, /Unknown command or option: scan/);
   assert.equal(result.stdout, "");
