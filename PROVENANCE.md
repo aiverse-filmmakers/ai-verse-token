@@ -16,3 +16,7 @@ The first commit in the restored repository is an untouched import of that archi
 ## Public-beta lineage
 
 `0.1.0-beta.1` is derived directly from that restored alpha.1 source. It keeps ledger format 2 and adds the operational setup, collection, pricing transport, cost-aware primary reads, host-scoped authorization, Gateway projection and public-beta lifecycle/readiness work without changing canonical telemetry ownership.
+
+## Cross-platform public-beta follow-up
+
+`0.1.0-beta.2` preserves the beta.1 runtime behavior and fixes the hosted Windows test harness to convert file URLs with `fileURLToPath()` instead of passing URL pathnames directly to Node. The immutable `v0.1.0-beta.1` tag is retained and is not moved.
