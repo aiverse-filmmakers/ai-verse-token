@@ -58,7 +58,7 @@ The Token entry is materialized with:
   "supported": true,
   "installed": true,
   "enabled": true,
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.3",
   "source": "AI-Verse-Token",
   "instructions": ".aiverse/extensions/ai-verse-token/INSTRUCTIONS.md",
   "engine": ".aiverse/extensions/ai-verse-token/engine.mjs",
