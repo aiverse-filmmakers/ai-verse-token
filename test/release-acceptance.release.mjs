@@ -80,11 +80,11 @@ test("packed artifact installs on a clean project and exposes package plus CLI w
     writeFileSync(join(project, "package.json"), JSON.stringify({ name: "token-clean-install", private: true, type: "module" }));
     runNpm(["install", tarball, "--ignore-scripts", "--no-audit", "--no-fund"], { cwd: project, stdio: "pipe" });
     const version = execFileSync(process.execPath, ["--input-type=module", "--eval", "import { PACKAGE_VERSION } from '@ai-verse/token'; process.stdout.write(PACKAGE_VERSION);"], { cwd: project, encoding: "utf8" });
-    assert.equal(version, "0.1.0-beta.2");
+    assert.equal(version, "0.1.0-beta.3");
     const cli = execFileSync(process.execPath, [join(project, "node_modules", "@ai-verse", "token", "bin", "ai-verse-token.mjs"), "--version"], { cwd: project, encoding: "utf8" });
-    assert.equal(cli.trim(), "0.1.0-beta.2");
+    assert.equal(cli.trim(), "0.1.0-beta.3");
     const oneCommand = runNpm(["exec", "--yes", "--package", tarball, "--", "ai-verse-token", "--version"], { cwd: work, encoding: "utf8" });
-    assert.equal(oneCommand.trim(), "0.1.0-beta.2");
+    assert.equal(oneCommand.trim(), "0.1.0-beta.3");
     assert.equal(existsSync(join(project, "node_modules", "@ai-verse", "token", "src")), false);
     assert.equal(existsSync(join(project, "node_modules", "@ai-verse", "token", "test")), false);
   } finally { rmSync(work, { recursive: true, force: true }); }
