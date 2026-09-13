@@ -15,7 +15,7 @@ const cli = fileURLToPath(new URL("../bin/ai-verse-token.mjs", import.meta.url))
 
 test("exports stable package identity", () => {
   assert.equal(PACKAGE_NAME, "@ai-verse/token");
-  assert.equal(PACKAGE_VERSION, "0.1.0-beta.2");
+  assert.equal(PACKAGE_VERSION, "0.1.0-beta.3");
   assert.equal(EXTENSION_ID, "ai-verse-token");
   assert.equal(PROTOCOL_VERSION, "ai-verse-token/0.1");
   assert.deepEqual(COST_STATUSES, ["ACTUAL", "CALCULATED", "UNKNOWN"]);
