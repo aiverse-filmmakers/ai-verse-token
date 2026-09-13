@@ -1,0 +1,14 @@
+export const AI_VERSE_TOKEN_EXTENSION_ID = "ai-verse-token" as const;
+export const AI_VERSE_TOKEN_EXTENSION_SOURCE = "AI-Verse-Token" as const;
+export const AI_VERSE_TOKEN_EXTENSION_VERSION = "0.1.0-alpha.1" as const;
+export const AI_VERSE_TOKEN_EXTENSION_ROOT = ".aiverse/extensions/ai-verse-token" as const;
+export const AI_VERSE_TOKEN_EXTENSION_INSTRUCTIONS = ".aiverse/extensions/ai-verse-token/INSTRUCTIONS.md" as const;
+export const AI_VERSE_TOKEN_EXTENSION_ENGINE = ".aiverse/extensions/ai-verse-token/engine.mjs" as const;
+export const AI_VERSE_TOKEN_EXTENSION_MANIFEST = ".aiverse/extensions/ai-verse-token/extension.json" as const;
+export const AI_VERSE_TOKEN_STATE_ROOT = ".aiverse/extensions/ai-verse-token/state" as const;
+export const AI_VERSE_TOKEN_LEDGER_PATH = ".aiverse/extensions/ai-verse-token/state/token.sqlite" as const;
+export const AI_VERSE_EXTENSION_REGISTRY_PATH = ".aiverse/extensions/registry.json" as const;
+export const AI_VERSE_EXTENSION_REGISTRY_LOCK_PATH = ".aiverse/extensions/registry.json.lock" as const;
+export const AI_VERSE_EXTENSION_REGISTRY_SCHEMA = "1.0" as const;
+export const AI_VERSE_REQUIRED_SCHEMA_MAJOR = 2 as const;
+export const AI_VERSE_REQUIRED_ARCHITECTURE = "unified-workspace" as const;

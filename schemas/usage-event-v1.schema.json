@@ -1,0 +1,464 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aiverse.example/schemas/ai-verse-token/usage-event-v1.schema.json",
+  "title": "AI-Verse Token Usage Event v1",
+  "description": "Draft canonical immutable usage and timing observation. Monetary settlement is separate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "source",
+    "observed_at",
+    "identity",
+    "usage",
+    "timing",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ai-verse-token/0.1"
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "request_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 500
+    },
+    "session_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 500
+    },
+    "run_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 500
+    },
+    "task_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 500
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime",
+        "source_type"
+      ],
+      "properties": {
+        "runtime": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "runtime_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 100
+        },
+        "source_type": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "source_record_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        },
+        "source_platform": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        }
+      }
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "billing_platform",
+        "requested_model",
+        "resolved_model"
+      ],
+      "properties": {
+        "billing_platform": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "inference_provider": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "requested_model": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        },
+        "resolved_model": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        },
+        "provider_model_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        },
+        "service_tier": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "region": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "billing_mode": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "alias_rule_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "system_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 300
+        },
+        "workspace_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 300
+        },
+        "project_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 300
+        },
+        "agent_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 300
+        },
+        "bot_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 300
+        },
+        "worker_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 300
+        },
+        "skill_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 300
+        },
+        "automation_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 300
+        },
+        "tool_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 300
+        }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "context_input_tokens": {
+          "$ref": "#/$defs/nonNegativeIntegerOrNull"
+        },
+        "input_tokens": {
+          "$ref": "#/$defs/nonNegativeIntegerOrNull"
+        },
+        "output_tokens": {
+          "$ref": "#/$defs/nonNegativeIntegerOrNull"
+        },
+        "reasoning_tokens": {
+          "$ref": "#/$defs/nonNegativeIntegerOrNull"
+        },
+        "cache_read_tokens": {
+          "$ref": "#/$defs/nonNegativeIntegerOrNull"
+        },
+        "cache_write_tokens": {
+          "$ref": "#/$defs/nonNegativeIntegerOrNull"
+        },
+        "cached_input_tokens": {
+          "$ref": "#/$defs/nonNegativeIntegerOrNull"
+        },
+        "audio_input_tokens": {
+          "$ref": "#/$defs/nonNegativeIntegerOrNull"
+        },
+        "audio_output_tokens": {
+          "$ref": "#/$defs/nonNegativeIntegerOrNull"
+        },
+        "image_input_units": {
+          "$ref": "#/$defs/nonNegativeNumberOrNull"
+        },
+        "image_output_units": {
+          "$ref": "#/$defs/nonNegativeNumberOrNull"
+        },
+        "web_search_units": {
+          "$ref": "#/$defs/nonNegativeNumberOrNull"
+        },
+        "request_units": {
+          "$ref": "#/$defs/nonNegativeNumberOrNull"
+        },
+        "total_tokens_reported": {
+          "$ref": "#/$defs/nonNegativeIntegerOrNull"
+        }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "started_at": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        },
+        "first_byte_at": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        },
+        "first_token_at": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        },
+        "last_token_at": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        },
+        "ended_at": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        },
+        "wall_ms": {
+          "$ref": "#/$defs/nonNegativeNumberOrNull"
+        },
+        "ttft_ms": {
+          "$ref": "#/$defs/nonNegativeNumberOrNull"
+        },
+        "generation_ms": {
+          "$ref": "#/$defs/nonNegativeNumberOrNull"
+        },
+        "queue_ms": {
+          "$ref": "#/$defs/nonNegativeNumberOrNull"
+        },
+        "provider_ms": {
+          "$ref": "#/$defs/nonNegativeNumberOrNull"
+        },
+        "gateway_overhead_ms": {
+          "$ref": "#/$defs/nonNegativeNumberOrNull"
+        },
+        "tool_wait_ms": {
+          "$ref": "#/$defs/nonNegativeNumberOrNull"
+        },
+        "network_ms": {
+          "$ref": "#/$defs/nonNegativeNumberOrNull"
+        }
+      }
+    },
+    "actual_charge": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "amount",
+        "currency",
+        "source"
+      ],
+      "properties": {
+        "amount": {
+          "type": "string",
+          "pattern": "^(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+          "maxLength": 128
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "external_charge_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        },
+        "reported_at": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        },
+        "source": {
+          "enum": [
+            "provider_reported",
+            "runtime_reported"
+          ]
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "collector_id",
+        "source_record_fingerprint",
+        "usage_quality",
+        "timing_quality",
+        "content_stored"
+      ],
+      "properties": {
+        "collector_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "collector_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 100
+        },
+        "source_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "source_record_fingerprint": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 256
+        },
+        "usage_quality": {
+          "enum": [
+            "provider_reported",
+            "runtime_reported",
+            "derived_exact",
+            "estimated",
+            "unknown"
+          ]
+        },
+        "timing_quality": {
+          "enum": [
+            "provider_reported",
+            "runtime_reported",
+            "derived_exact",
+            "estimated",
+            "unknown"
+          ]
+        },
+        "content_stored": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonNegativeIntegerOrNull": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+      ,"maximum": 9007199254740991
+    },
+    "nonNegativeNumberOrNull": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+      ,"maximum": 9007199254740991
+    },
+    "dateTimeOrNull": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

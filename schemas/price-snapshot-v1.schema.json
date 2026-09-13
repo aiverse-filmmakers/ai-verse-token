@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aiverse.example/schemas/ai-verse-token/price-snapshot-v1.schema.json",
+  "title": "AI-Verse Token Price Snapshot v0.1",
+  "description": "Immutable effective-dated pricing fact. Monetary rates are decimal strings to avoid floating-point tariff drift.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "price_snapshot_id",
+    "identity",
+    "currency",
+    "effective",
+    "rates",
+    "source",
+    "verification"
+  ],
+  "properties": {
+    "schema_version": { "const": "ai-verse-token-price/0.1" },
+    "price_snapshot_id": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["billing_platform", "resolved_model"],
+      "properties": {
+        "billing_platform": { "$ref": "#/$defs/shortText" },
+        "resolved_model": { "$ref": "#/$defs/modelText" },
+        "inference_provider": { "$ref": "#/$defs/shortText" },
+        "provider_model_id": { "$ref": "#/$defs/modelText" },
+        "service_tier": { "$ref": "#/$defs/shortText" },
+        "region": { "$ref": "#/$defs/shortText" },
+        "billing_mode": { "$ref": "#/$defs/shortText" }
+      }
+    },
+    "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "effective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["starts_at"],
+      "properties": {
+        "starts_at": { "$ref": "#/$defs/dateTime" },
+        "ends_at": { "$ref": "#/$defs/dateTime" },
+        "weekdays_utc": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": { "enum": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] }
+        },
+        "utc_time_windows": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["start", "end"],
+            "properties": {
+              "start": { "$ref": "#/$defs/utcTime" },
+              "end": { "$ref": "#/$defs/utcTime" }
+            }
+          }
+        }
+      }
+    },
+    "conditions": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["basis"],
+          "properties": {
+            "basis": { "enum": ["input_tokens", "input_plus_cache_read_tokens"] },
+            "min_inclusive": { "$ref": "#/$defs/nonNegativeSafeInteger" },
+            "max_exclusive": { "$ref": "#/$defs/nonNegativeSafeInteger" }
+          },
+          "anyOf": [
+            { "required": ["min_inclusive"] },
+            { "required": ["max_exclusive"] }
+          ]
+        },
+        "cache_ttl": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "min_seconds_inclusive": { "$ref": "#/$defs/nonNegativeSafeInteger" },
+            "max_seconds_exclusive": { "$ref": "#/$defs/nonNegativeSafeInteger" }
+          },
+          "anyOf": [
+            { "required": ["min_seconds_inclusive"] },
+            { "required": ["max_seconds_exclusive"] }
+          ]
+        }
+      }
+    },
+    "rates": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "input_tokens": { "$ref": "#/$defs/rate" },
+        "output_tokens": { "$ref": "#/$defs/rate" },
+        "reasoning_tokens": { "$ref": "#/$defs/rate" },
+        "cache_read_tokens": { "$ref": "#/$defs/rate" },
+        "cache_write_tokens": { "$ref": "#/$defs/rate" },
+        "cached_input_tokens": { "$ref": "#/$defs/rate" },
+        "audio_input_tokens": { "$ref": "#/$defs/rate" },
+        "audio_output_tokens": { "$ref": "#/$defs/rate" },
+        "image_input_units": { "$ref": "#/$defs/rate" },
+        "image_output_units": { "$ref": "#/$defs/rate" },
+        "web_search_units": { "$ref": "#/$defs/rate" },
+        "request_units": { "$ref": "#/$defs/rate" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority", "source_id", "retrieved_at"],
+      "properties": {
+        "authority": {
+          "enum": ["provider_pricing_api", "official_public_pricing", "secondary_catalog"]
+        },
+        "source_id": { "$ref": "#/$defs/shortText" },
+        "source_url": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "pattern": "^https?://"
+        },
+        "retrieved_at": { "$ref": "#/$defs/dateTime" },
+        "published_at": { "$ref": "#/$defs/dateTime" },
+        "etag": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "content_digest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["verified", "cross_checked", "unverified", "disputed"] },
+        "verified_at": { "$ref": "#/$defs/dateTime" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "enum": ["verified", "cross_checked"] } } },
+          "then": { "required": ["verified_at"] }
+        }
+      ]
+    },
+    "supersedes_price_snapshot_id": { "type": "string", "minLength": 1, "maxLength": 500 }
+  },
+  "$defs": {
+    "shortText": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "modelText": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "dateTime": { "type": "string", "format": "date-time" },
+    "utcTime": { "type": "string", "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d)?$" },
+    "nonNegativeSafeInteger": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "decimalMoney": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9]\\d{0,17})(?:\\.\\d{1,18})?$"
+    },
+    "rate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amount", "per"],
+      "properties": {
+        "amount": { "$ref": "#/$defs/decimalMoney" },
+        "per": { "type": "integer", "minimum": 1, "maximum": 1000000000 }
+      }
+    }
+  }
+}

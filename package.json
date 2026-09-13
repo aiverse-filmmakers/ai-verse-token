@@ -1,0 +1,126 @@
+{
+  "name": "@ai-verse/token",
+  "version": "0.1.0-alpha.1",
+  "description": "Headless LLM, agent and AI-OS token, cost and runtime usage intelligence.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "bin": {
+    "ai-verse-token": "./bin/ai-verse-token.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    },
+    "./cli": {
+      "types": "./dist/src/cli.d.ts",
+      "import": "./dist/src/cli.js"
+    },
+    "./package.json": "./package.json",
+    "./protocol": {
+      "types": "./dist/src/protocol/index.d.ts",
+      "import": "./dist/src/protocol/index.js"
+    },
+    "./storage": {
+      "types": "./dist/src/storage/index.d.ts",
+      "import": "./dist/src/storage/index.js"
+    },
+    "./identity": {
+      "types": "./dist/src/identity/index.d.ts",
+      "import": "./dist/src/identity/index.js"
+    },
+    "./query": {
+      "types": "./dist/src/query/index.d.ts",
+      "import": "./dist/src/query/index.js"
+    },
+    "./pricing": {
+      "types": "./dist/src/pricing/index.d.ts",
+      "import": "./dist/src/pricing/index.js"
+    },
+    "./cost": {
+      "types": "./dist/src/cost/index.d.ts",
+      "import": "./dist/src/cost/index.js"
+    },
+    "./collectors": {
+      "types": "./dist/src/collectors/index.d.ts",
+      "import": "./dist/src/collectors/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/src/adapters/index.d.ts",
+      "import": "./dist/src/adapters/index.js"
+    },
+    "./time": {
+      "types": "./dist/src/time/index.d.ts",
+      "import": "./dist/src/time/index.js"
+    },
+    "./efficiency": {
+      "types": "./dist/src/efficiency/index.d.ts",
+      "import": "./dist/src/efficiency/index.js"
+    },
+    "./read": {
+      "types": "./dist/src/read/index.d.ts",
+      "import": "./dist/src/read/index.js"
+    },
+    "./export": {
+      "types": "./dist/src/export/index.d.ts",
+      "import": "./dist/src/export/index.js"
+    },
+    "./mcp": {
+      "types": "./dist/src/mcp/index.d.ts",
+      "import": "./dist/src/mcp/index.js"
+    },
+    "./native": {
+      "types": "./dist/src/native/index.d.ts",
+      "import": "./dist/src/native/index.js"
+    },
+    "./dashboard": {
+      "types": "./dist/src/dashboard/index.d.ts",
+      "import": "./dist/src/dashboard/index.js"
+    },
+    "./brain": {
+      "types": "./dist/src/brain/index.d.ts",
+      "import": "./dist/src/brain/index.js"
+    },
+    "./memory": {
+      "types": "./dist/src/memory/index.d.ts",
+      "import": "./dist/src/memory/index.js"
+    },
+    "./data": {
+      "types": "./dist/src/data/index.d.ts",
+      "import": "./dist/src/data/index.js"
+    },
+    "./bots": {
+      "types": "./dist/src/bots/index.d.ts",
+      "import": "./dist/src/bots/index.js"
+    },
+    "./connections": {
+      "types": "./dist/src/connections/index.d.ts",
+      "import": "./dist/src/connections/index.js"
+    },
+    "./correlation": {
+      "types": "./dist/src/correlation/index.d.ts",
+      "import": "./dist/src/correlation/index.js"
+    }
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "README.md",
+    "THIRD-PARTY-NOTICES.md"
+  ],
+  "scripts": {
+    "clean": "node --eval \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test test/*.test.mjs && npm run test:release",
+    "test:release": "node --test test/release-acceptance.release.mjs",
+    "ci": "npm run check && npm test",
+    "prepare": "npm run build"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3"
+  },
+  "license": "UNLICENSED"
+}
