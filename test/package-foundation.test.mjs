@@ -29,7 +29,7 @@ test("exports stable package identity", () => {
 
 test("CLI help advertises implemented read and native lifecycle surfaces", () => {
   const output = execFileSync(process.execPath, [cli, "--help"], { encoding: "utf8" });
-  assert.match(output, /AI-Verse Token 0\.1\.0-beta\.2/);
+  assert.match(output, /AI-Verse Token 0\.1\.0-beta\.3/);
   assert.match(output, /Usage:/);
   assert.match(output, /summary --db/);
   assert.match(output, /query --db/);
