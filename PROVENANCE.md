@@ -20,3 +20,8 @@ The first commit in the restored repository is an untouched import of that archi
 ## Cross-platform public-beta follow-up
 
 `0.1.0-beta.2` preserves the beta.1 runtime behavior and fixes the hosted Windows test harness to convert file URLs with `fileURLToPath()` instead of passing URL pathnames directly to Node. The immutable `v0.1.0-beta.1` tag is retained and is not moved.
+
+
+## Public-beta.3 readiness correction
+
+`0.1.0-beta.3` preserves beta.2 behavior and adds a strict read-only readiness failure for an incomplete Token pricing store. A missing `snapshots` or `sync-state` directory is reported as `PRICING_STORE_UNHEALTHY`; doctor does not recreate the missing state and the component cannot report `ready` until the Token-owned pricing store is structurally healthy.
