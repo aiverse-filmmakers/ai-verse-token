@@ -1,6 +1,6 @@
 {
   "name": "@ai-verse/token",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.3",
   "description": "Headless LLM, agent and AI-OS token, cost and runtime usage intelligence.",
   "type": "module",
   "engines": {
