@@ -14,7 +14,7 @@ const cli = new URL("../bin/ai-verse-token.mjs", import.meta.url);
 
 test("exports stable package identity", () => {
   assert.equal(PACKAGE_NAME, "@ai-verse/token");
-  assert.equal(PACKAGE_VERSION, "0.1.0-alpha.1");
+  assert.equal(PACKAGE_VERSION, "0.1.0-beta.1");
   assert.equal(EXTENSION_ID, "ai-verse-token");
   assert.equal(PROTOCOL_VERSION, "ai-verse-token/0.1");
   assert.deepEqual(COST_STATUSES, ["ACTUAL", "CALCULATED", "UNKNOWN"]);
@@ -28,14 +28,19 @@ test("exports stable package identity", () => {
 
 test("CLI help advertises implemented read and native lifecycle surfaces", () => {
   const output = execFileSync(process.execPath, [cli.pathname, "--help"], { encoding: "utf8" });
-  assert.match(output, /AI-Verse Token 0\.1\.0-alpha\.1/);
+  assert.match(output, /AI-Verse Token 0\.1\.0-beta\.1/);
   assert.match(output, /Usage:/);
   assert.match(output, /summary --db/);
   assert.match(output, /query --db/);
   assert.match(output, /export --db/);
   assert.match(output, /privacy-safe by default/);
   assert.match(output, /install --root/);
+  assert.match(output, /setup --root/);
+  assert.match(output, /collect --root/);
+  assert.match(output, /prices sync --root/);
+  assert.match(output, /usage --root/);
   assert.match(output, /doctor --root/);
+  assert.match(output, /UNKNOWN cost is never converted to zero/);
   assert.match(output, /state survives uninstall/);
   assert.doesNotMatch(output, /scan completed|cost calculated|ledger opened/i);
 });

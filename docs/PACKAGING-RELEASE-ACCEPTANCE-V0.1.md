@@ -1,13 +1,13 @@
 # Packaging and Release Acceptance v0.1
 
-Status: hardened alpha.1 release gate, Task 32 / 32.
+Status: public-beta.1 release acceptance, updated 2026-09-13.
 
 ## Release shape
 
 Package:
 
 ```text
-@ai-verse/token@0.1.0-alpha.1
+@ai-verse/token@0.1.0-beta.1
 ```
 
 CLI:
@@ -24,6 +24,7 @@ The packed artifact contains only the runtime package surface:
 - compiled `dist/`;
 - `README.md`;
 - `THIRD-PARTY-NOTICES.md`;
+- `PROVENANCE.md`;
 - package metadata.
 
 Source TypeScript, tests, planning fixtures and local telemetry databases are not shipped.
@@ -33,13 +34,13 @@ Source TypeScript, tests, planning fixtures and local telemetry databases are no
 A packed/local release can be installed with:
 
 ```bash
-npm install ./ai-verse-token-0.1.0-alpha.1.tgz
+npm install ./ai-verse-token-0.1.0-beta.1.tgz
 ```
 
 It can also be executed without a permanent project install:
 
 ```bash
-npm exec --yes --package ./ai-verse-token-0.1.0-alpha.1.tgz -- ai-verse-token --version
+npm exec --yes --package ./ai-verse-token-0.1.0-beta.1.tgz -- ai-verse-token --version
 ```
 
 After npm publication, the intended one-command native path is:
@@ -137,11 +138,11 @@ The complete suite verifies all first-release laws across focused and integratio
 
 ## Verification status
 
-The hardened alpha.1 normal suite passes **249 / 249** tests and the serial release-acceptance stage passes **3 / 3**, for **252 / 252** checks exercised by `npm test`. Coverage from the normal suite is **95.08% lines**, **77.95% branches** and **97.48% functions**.
+The public-beta.1 normal suite passes **255 / 255** tests and the serial release-acceptance stage passes **3 / 3**, for **258 / 258** executed tests across the normal and release stages. The clean packed-install acceptance passes from the tarball artifact rather than relying on the source checkout.
 
-Alpha.1 uses ledger format **2**. It intentionally fails closed on the unpublished alpha.0 format rather than silently mutating or guessing a migration.
+Beta.1 retains ledger format **2**. It intentionally fails closed on incompatible ledger formats rather than silently mutating or guessing a migration.
 
-Local release verification on Node 22 passes the full hardened suite plus the serial release acceptance stage. The GitHub Actions six-leg Node 22/24 cross-platform matrix is configured and contract-tested, but cannot be claimed as remotely executed until a GitHub repository exists and Actions runs it.
+Local release verification on Node 22 passes the full public-beta suite plus the serial release acceptance stage. The GitHub Actions six-leg Node 22/24 cross-platform matrix is configured and contract-tested, but cannot be claimed as remotely executed until a GitHub repository exists and Actions runs it.
 
 ## Final release law
 

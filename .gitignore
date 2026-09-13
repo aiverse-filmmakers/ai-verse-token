@@ -9,4 +9,4 @@ coverage/
 *.sqlite-wal
 *.sqlite-shm
 .cache/
-runtime/
+/runtime/

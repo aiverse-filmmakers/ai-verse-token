@@ -37,7 +37,7 @@ function fixture() {
 test("TokenReader exposes stable read-only query, aggregate and summary surfaces", () => {
   const f=fixture();
   try {
-    const reader=openTokenReader({path:f.path});
+    const reader=openTokenReader({path:f.path,authorization:{principal_id:"test-owner",mode:"owner"}});
     const page=reader.query({limit:1,order:"asc"});
     assert.equal(page.events.length,1);
     assert.equal(page.hasMore,true);
@@ -55,11 +55,11 @@ test("TokenReader exposes stable read-only query, aggregate and summary surfaces
 test("bounded time and efficiency reads fail closed when max_events is exceeded", () => {
   const f=fixture();
   try {
-    const reader=openTokenReader({path:f.path});
+    const reader=openTokenReader({path:f.path,authorization:{principal_id:"test-owner",mode:"owner"}});
     assert.throws(()=>reader.time({max_events:1}), error=>error?.code === "READ_LIMIT_EXCEEDED");
     const efficiency=reader.efficiency({max_events:2,group_by:"resolved_model"});
     assert.equal(efficiency.event_count,2);
-    assert.equal(efficiency.cost_scope,"actual_only");
+    assert.equal(efficiency.cost_scope,"actual_calculated_unknown");
     assert.equal(efficiency.analysis.overall.costs.actual_event_count,1);
     assert.equal(efficiency.analysis.overall.costs.unknown_event_count,1);
     reader.close();
@@ -69,7 +69,7 @@ test("bounded time and efficiency reads fail closed when max_events is exceeded"
 test("JSON export is privacy-safe by default and raw provenance IDs require explicit opt-in", () => {
   const f=fixture();
   try {
-    const reader=openTokenReader({path:f.path});
+    const reader=openTokenReader({path:f.path,authorization:{principal_id:"test-owner",mode:"owner"}});
     const safe=JSON.parse(exportUsage(reader,{format:"json",exported_at:"2026-09-12T12:00:00Z"}));
     assert.equal(safe.schema_version,"ai-verse-token-export/0.1");
     assert.equal(safe.event_count,2);
@@ -87,7 +87,7 @@ test("JSON export is privacy-safe by default and raw provenance IDs require expl
 test("CSV export uses fixed telemetry columns and never exports fingerprints or source record IDs", () => {
   const f=fixture();
   try {
-    const reader=openTokenReader({path:f.path});
+    const reader=openTokenReader({path:f.path,authorization:{principal_id:"test-owner",mode:"owner"}});
     const csv=exportUsage(reader,{format:"csv"});
     assert.match(csv,/event_id,observed_at/);
     assert.match(csv,/evt_read_1/);
@@ -99,7 +99,7 @@ test("CSV export uses fixed telemetry columns and never exports fingerprints or 
 test("export ceiling prevents accidental unbounded dumps", () => {
   const f=fixture();
   try {
-    const reader=openTokenReader({path:f.path});
+    const reader=openTokenReader({path:f.path,authorization:{principal_id:"test-owner",mode:"owner"}});
     assert.throws(()=>exportUsage(reader,{format:"json",max_events:1}),/exceeds max_events=1/);
     reader.close();
   } finally { f.cleanup(); }
@@ -108,7 +108,7 @@ test("export ceiling prevents accidental unbounded dumps", () => {
 test("read-only MCP surface exposes only bounded read tools and privacy-safe events", () => {
   const f=fixture();
   try {
-    const reader=openTokenReader({path:f.path});
+    const reader=openTokenReader({path:f.path,authorization:{principal_id:"test-owner",mode:"owner"}});
     const mcp=createReadOnlyMcpSurface(reader);
     assert.ok(mcp.tools.length >= 5);
     assert.equal(mcp.tools.every(tool=>tool.read_only),true);

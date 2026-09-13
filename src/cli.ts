@@ -26,14 +26,19 @@ Usage:
   ai-verse-token query --db <token.sqlite> [--limit <1..100>] [--json]
   ai-verse-token export --db <token.sqlite> --format <json|csv> [--limit <1..50000>]
   ai-verse-token install --root <ai-verse-os-root> [--json]
-  ai-verse-token update --root <ai-verse-os-root> [--json]
+  ai-verse-token setup --root <ai-verse-os-root> [--json]
+  ai-verse-token status --root <ai-verse-os-root> [--json]
+  ai-verse-token doctor --root <ai-verse-os-root> [--json]
+  ai-verse-token collect --root <ai-verse-os-root> [--json]
+  ai-verse-token prices sync --root <ai-verse-os-root> [--json]
+  ai-verse-token usage --root <ai-verse-os-root> [--workspace <id>] [--bot <id>] [--skill <id>] [--task <id>] [--json]
   ai-verse-token enable --root <ai-verse-os-root> [--json]
   ai-verse-token disable --root <ai-verse-os-root> [--json]
+  ai-verse-token update --root <ai-verse-os-root> [--json]
   ai-verse-token uninstall --root <ai-verse-os-root> [--json]
-  ai-verse-token status --root <candidate-root> [--json]
-  ai-verse-token doctor --root <candidate-root> [--json]
 
-Read commands are privacy-safe by default and never modify the Token ledger.
+Read commands are privacy-safe by default. UNKNOWN cost is never converted to zero.
+Install never creates telemetry state. Setup initializes Token-owned state and attempts one real collection/pricing pass without granting external authority.
 Native lifecycle commands modify only AI-Verse Token's local extension entry/files. Token state survives uninstall.
 `;
 
@@ -188,7 +193,7 @@ export function runCli(args: readonly string[], io: CliIo): number {
 
   let reader: ReturnType<typeof openTokenReader> | undefined;
   try {
-    reader = openTokenReader({ path: parsed.db });
+    reader = openTokenReader({ path: parsed.db, authorization: { principal_id: "local-cli-owner", mode: "owner" } });
     if (parsed.command === "summary") {
       const summary = reader.summary();
       io.stdout(parsed.json ? JSON.stringify(summary, null, 2) : textSummary(summary));
@@ -214,4 +219,123 @@ export function runCli(args: readonly string[], io: CliIo): number {
     io.stderr(`${code ? `${code}: ` : ""}${error instanceof Error ? error.message : String(error)}`);
     return 1;
   } finally { reader?.close(); }
+}
+
+/**
+ * Public-beta asynchronous CLI entrypoint used by the executable. The legacy
+ * runCli function remains synchronous for compatibility with alpha callers.
+ */
+export async function runCliAsync(args: readonly string[], io: CliIo): Promise<number> {
+  const command = args[0];
+  if (command !== "setup" && command !== "collect" && command !== "usage" && command !== "prices" && command !== "status" && command !== "doctor") {
+    return runCli(args, io);
+  }
+
+  function parseRoot(start: number): { root: string; json: boolean; filter: Record<string, string> } {
+    let root: string | undefined;
+    let json = false;
+    const filter: Record<string, string> = {};
+    const filterOptions: Readonly<Record<string, string>> = Object.freeze({
+      "--system": "system_id", "--workspace": "workspace_id", "--project": "project_id",
+      "--agent": "agent_id", "--bot": "bot_id", "--worker": "worker_id", "--skill": "skill_id",
+      "--automation": "automation_id", "--tool": "tool_id", "--run": "run_id", "--task": "task_id",
+      "--session": "session_id"
+    });
+    for (let index = start; index < args.length; index += 1) {
+      const arg = args[index];
+      if (arg === "--json") { json = true; continue; }
+      if (arg === "--root") { root = filesystemPath(args[++index], "--root"); continue; }
+      const filterKey = arg === undefined ? undefined : filterOptions[arg];
+      if (filterKey !== undefined) {
+        const value = args[++index];
+        if (value === undefined || value.length < 1 || value.includes("\u0000")) throw new CliUsageError(`${arg} requires a bounded value`);
+        filter[filterKey] = value;
+        continue;
+      }
+      throw new CliUsageError(`Unknown option: ${String(arg)}`);
+    }
+    if (root === undefined) throw new CliUsageError("--root is required");
+    return { root, json, filter };
+  }
+
+  try {
+    const { setupTokenRuntime, collectTokenUsage, syncTokenPricing, statusTokenRuntime, doctorTokenRuntime } = await import("./runtime/index.js");
+    if (command === "prices") {
+      if (args[1] !== "sync") throw new CliUsageError("prices requires the sync subcommand");
+      const parsed = parseRoot(2);
+      const result = await syncTokenPricing(parsed.root);
+      io.stdout(parsed.json ? JSON.stringify(result, null, 2) : result.map((row) => `${row.source_id}: ${row.outcome} inserted=${row.inserted} duplicates=${row.duplicates}`).join("\n"));
+      return result.some((row) => row.outcome === "failed") ? 1 : 0;
+    }
+    const parsed = parseRoot(1);
+    if (command === "setup") {
+      const result = await setupTokenRuntime(parsed.root);
+      io.stdout(parsed.json ? JSON.stringify(result, null, 2) : [
+        `setup: ${result.readiness.state}`,
+        `Root: ${result.root_path}`,
+        `Ledger created: ${String(result.ledger_created)}`,
+        `Sources discovered: ${String(result.collection?.source_count ?? 0)}`,
+        `Events inserted: ${String(result.collection?.inserted ?? 0)}`,
+        `Pricing sync: ${result.pricing.map((row) => row.outcome).join(", ") || "not-run"}`
+      ].join("\n"));
+      return result.readiness.ready ? 0 : 1;
+    }
+    if (command === "collect") {
+      const result = await collectTokenUsage(parsed.root);
+      io.stdout(parsed.json ? JSON.stringify(result, null, 2) : [
+        `Sources: ${result.source_count}`,
+        `Emitted: ${result.emitted}`,
+        `Inserted: ${result.inserted}`,
+        `Duplicates: ${result.duplicates}`,
+        `Errors: ${result.error_count}`
+      ].join("\n"));
+      return result.error_count === 0 ? 0 : 1;
+    }
+    if (command === "status") {
+      const result = statusTokenRuntime(parsed.root);
+      io.stdout(parsed.json ? JSON.stringify(result, null, 2) : `status: ${result.state}`);
+      return result.state === "unhealthy" || result.state === "absent" ? 1 : 0;
+    }
+    if (command === "doctor") {
+      const result = await doctorTokenRuntime(parsed.root);
+      io.stdout(parsed.json ? JSON.stringify(result, null, 2) : [
+        `doctor: ${result.state}`,
+        `Ready: ${String(result.ready)}`,
+        `Sources: ${result.collectors.discovered_sources}`,
+        `Pricing snapshots: ${result.pricing.snapshot_count}`,
+        ...result.problems.map((problem) => `Problem ${problem.code}: ${problem.message}`),
+        ...result.notices.map((notice) => `Notice ${notice.code}: ${notice.message}`)
+      ].join("\n"));
+      return result.ready ? 0 : 1;
+    }
+    if (command === "usage") {
+      const { AI_VERSE_TOKEN_LEDGER_PATH, AI_VERSE_TOKEN_PRICING_ROOT } = await import("./native/constants.js");
+      const { safeRelativePath } = await import("./native/paths.js");
+      const reader = openTokenReader({
+        path: safeRelativePath(parsed.root, AI_VERSE_TOKEN_LEDGER_PATH),
+        pricing_root: safeRelativePath(parsed.root, AI_VERSE_TOKEN_PRICING_ROOT),
+        authorization: { principal_id: "local-cli-owner", mode: "owner" }
+      });
+      try {
+        const filter = Object.keys(parsed.filter).length === 0 ? undefined : parsed.filter;
+        const result = reader.overview({ ...(filter === undefined ? {} : { filter }), max_events: 10_000 });
+        io.stdout(parsed.json ? JSON.stringify(result, null, 2) : [
+          `Requests: ${String(result.summary.request_count)}`,
+          `Input tokens: ${String(result.summary.input_tokens ?? "unknown")}`,
+          `Output tokens: ${String(result.summary.output_tokens ?? "unknown")}`,
+          `Cost ACTUAL events: ${result.costs.actual_event_count}`,
+          `Cost CALCULATED events: ${result.costs.calculated_event_count}`,
+          `Cost UNKNOWN events: ${result.costs.unknown_event_count}`,
+          ...result.costs.by_currency.map((row) => `${row.currency}: actual=${row.actual} calculated=${row.calculated} known_total=${row.known_total}`)
+        ].join("\n"));
+        return 0;
+      } finally { reader.close(); }
+    }
+    return 2;
+  } catch (error) {
+    if (error instanceof CliUsageError) { io.stderr(`${error.message}\nRun ai-verse-token --help for usage.`); return 2; }
+    const code = typeof error === "object" && error !== null && "code" in error ? String((error as { code?: unknown }).code ?? "") : "";
+    io.stderr(`${code ? `${code}: ` : ""}${error instanceof Error ? error.message : String(error)}`);
+    return 1;
+  }
 }

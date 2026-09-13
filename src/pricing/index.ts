@@ -58,3 +58,10 @@ export type {
   PricingRefreshReason,
   PricingSyncReport
 } from "./sync.js";
+
+export {
+  PricingTransportError,
+  createOpenRouterModelsFetcher,
+  createTokenPriceManifestFetcher,
+  PRICING_TRANSPORT_LIMITS
+} from "./transports.js";

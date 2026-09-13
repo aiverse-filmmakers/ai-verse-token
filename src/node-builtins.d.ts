@@ -43,6 +43,7 @@ declare module "node:sqlite" {
 
 
 declare module "node:url" {
+  export function fileURLToPath(url: string | URL): string;
   export class URL {
     constructor(input: string, base?: string | URL);
     readonly protocol: string;
@@ -60,7 +61,7 @@ declare module "node:path" {
 
 declare module "node:crypto" {
   export interface Hash {
-    update(data: string): Hash;
+    update(data: string | Uint8Array): Hash;
     digest(encoding: "hex"): string;
   }
   export function createHash(algorithm: "sha256"): Hash;
@@ -89,6 +90,8 @@ declare module "node:fs" {
   export function unlinkSync(path: string): void;
   export function renameSync(oldPath: string, newPath: string): void;
   export function rmdirSync(path: string): void;
+  export function cpSync(source: string, destination: string, options?: { recursive?: boolean; force?: boolean; errorOnExist?: boolean }): void;
+  export function rmSync(path: string, options?: { recursive?: boolean; force?: boolean }): void;
 }
 
 declare class Buffer extends Uint8Array {
@@ -121,4 +124,40 @@ declare module "node:path" {
   export const sep: string;
   export function basename(path: string): string;
   export function relative(from: string, to: string): string;
+}
+
+
+declare const process: {
+  readonly env: Record<string, string | undefined>;
+  readonly platform: string;
+};
+
+declare class AbortSignal {}
+declare class AbortController {
+  readonly signal: AbortSignal;
+  abort(): void;
+}
+declare function setTimeout(callback: () => void, delay?: number): unknown;
+declare function clearTimeout(handle: unknown): void;
+declare class TextDecoder { decode(input?: Uint8Array): string; }
+interface FetchHeaders { get(name: string): string | null; }
+interface FetchResponse {
+  readonly status: number;
+  readonly ok: boolean;
+  readonly headers: FetchHeaders;
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+declare function fetch(input: string, init?: {
+  readonly headers?: Readonly<Record<string, string>>;
+  readonly signal?: AbortSignal;
+  readonly redirect?: "error" | "follow" | "manual";
+}): Promise<FetchResponse>;
+
+
+declare module "node:os" {
+  export function homedir(): string;
+}
+
+declare interface ImportMeta {
+  readonly url: string;
 }

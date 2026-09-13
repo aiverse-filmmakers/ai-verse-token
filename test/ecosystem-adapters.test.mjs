@@ -46,7 +46,7 @@ function fixture() {
 test("Dashboard projection is bounded/read-only and never exposes a SQLite path", () => {
   const f = fixture();
   try {
-    const reader = openTokenReader({ path: f.path });
+    const reader = openTokenReader({ path: f.path, authorization: { principal_id: "test-owner", mode: "owner" } });
     const dashboard = createTokenDashboardProjection(reader);
     const overview = dashboard.overview();
     assert.equal(overview.summary.request_count, 2);
@@ -63,7 +63,7 @@ test("Dashboard projection is bounded/read-only and never exposes a SQLite path"
 test("Brain adapter returns bounded privacy-safe usage answers only", () => {
   const f = fixture();
   try {
-    const reader = openTokenReader({ path: f.path });
+    const reader = openTokenReader({ path: f.path, authorization: { principal_id: "test-owner", mode: "owner" } });
     const brain = createTokenBrainAdapter(reader);
     assert.equal(brain.summary().answer.request_count, 2);
     const recent = brain.recent(undefined, 1);
@@ -92,7 +92,7 @@ test("Data bridge keeps Token as authority and does not transfer ledger ownershi
   try {
     const ref = tokenDataReference(f.first);
     assert.deepEqual(ref, { uri: "token://event/evt_ecosystem_1", authority: "ai-verse-token", ownership_transferred: false, event_id: "evt_ecosystem_1" });
-    const reader = openTokenReader({ path: f.path });
+    const reader = openTokenReader({ path: f.path, authorization: { principal_id: "test-owner", mode: "owner" } });
     const projection = createTokenDataProjection(reader, undefined, new Date("2026-09-12T12:00:00Z"));
     assert.equal(projection.authority, "ai-verse-token");
     assert.equal(projection.ownership_transferred, false);
@@ -109,11 +109,16 @@ test("Multiple Bots attribution maps TeamRun to run_id and fails closed on attri
     worker_id: "worker-7",
     team_run_id: "teamrun-42",
     task_id: "task-1",
-    workspace_id: "workspace-1"
+    workspace_id: "workspace-1",
+    system_id: "system-1",
+    agent_id: "agent-1",
+    skill_id: "skill-research"
   });
   assert.equal(attributed.run_id, "teamrun-42");
   assert.equal(attributed.scope.bot_id, "bot-research");
   assert.equal(attributed.scope.worker_id, "worker-7");
+  assert.equal(attributed.scope.system_id, "system-1");
+  assert.equal(attributed.scope.skill_id, "skill-research");
   assert.throws(() => attributeMultipleBotsUsage(attributed, { worker_id: "worker-8" }), (error) => error?.code === "ATTRIBUTION_CONFLICT");
 });
 

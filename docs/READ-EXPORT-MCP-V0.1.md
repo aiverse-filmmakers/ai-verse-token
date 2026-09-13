@@ -8,17 +8,18 @@ Task 29 exposes AI-Verse Token telemetry through stable read-only interfaces so 
 
 `@ai-verse/token/read` provides `openTokenReader()`.
 
-`TokenReader` always opens an existing Token ledger in SQLite read-only mode and exposes:
+`TokenReader` always opens an existing Token ledger in SQLite read-only mode. Construction requires an explicit authorization envelope supplied by the outer host or a trusted local-owner boundary. Token never derives permission from telemetry attribution. It exposes:
 
 - paged usage query;
 - fixed-dimension aggregate query;
 - bounded summary totals;
 - bounded time analysis and rollups;
-- bounded efficiency analysis using provider/runtime `ACTUAL` charges already present on canonical events.
+- bounded efficiency analysis using the complete `ACTUAL` / `CALCULATED` / `UNKNOWN` cost truth path;
+- bounded cost and overview reads composed from the Token pricing store and CostEngine.
 
 Time/efficiency scans default to 10,000 events and are hard-capped at 50,000. A caller must narrow its filter or explicitly raise the bounded ceiling instead of receiving an accidental unbounded scan.
 
-The read API never exposes a write method.
+The read API never exposes a write method. Scoped authorization is an immutable floor: a caller may narrow its requested filters but cannot request a conflicting workspace, Bot, Skill, task or other scoped dimension.
 
 ## CLI
 
@@ -30,7 +31,7 @@ ai-verse-token query --db <token.sqlite> [--limit <1..100>] [--json]
 ai-verse-token export --db <token.sqlite> --format <json|csv> [--limit <1..50000>]
 ```
 
-All commands open the ledger read-only. Usage errors exit `2`; runtime/read failures exit `1`; successful commands exit `0`.
+All commands open the ledger read-only and establish an explicit local-owner authorization boundary for the operator-supplied local database path. Usage errors exit `2`; runtime/read failures exit `1`; successful commands exit `0`.
 
 CLI query JSON uses the privacy-safe projection by default.
 
@@ -67,7 +68,7 @@ No MCP tool writes events, pricing, checkpoints, budgets or configuration.
 
 ## Privacy boundary
 
-Trusted package code may use the canonical read API. Agent-facing surfaces default to redacted source-level provenance IDs.
+Trusted package code may use the canonical read API. Agent-facing surfaces default to redacted source-level provenance IDs. Gateway/MCP hosts must construct their reader from host-authorized scope, never from event attribution.
 
 Neither CLI nor MCP accepts SQL, SQLite paths inside query payloads, arbitrary column names or arbitrary sort expressions. The only filesystem path accepted by CLI is the operator-supplied ledger path used to create the read-only TokenReader.
 
@@ -87,13 +88,11 @@ Measured on the Task 29 development host, the complete performance test includin
 
 ## Non-goals
 
-Task 29 does not add:
+The read layer does not add:
 
 - write-capable MCP tools;
 - raw SQL;
-- Dashboard-specific presentation contracts;
-- price synchronization commands;
-- AI-Verse install/lifecycle commands;
+- authorization identity ownership;
 - unbounded export;
 - automatic FX conversion.
 

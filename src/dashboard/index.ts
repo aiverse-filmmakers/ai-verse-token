@@ -11,6 +11,7 @@ export interface TokenDashboardOverview {
   readonly summary: ReturnType<TokenReader["summary"]>;
   readonly time: ReturnType<TokenReader["time"]>;
   readonly efficiency: ReturnType<TokenReader["efficiency"]>;
+  readonly costs: ReturnType<TokenReader["costs"]>["summary"];
   readonly provenance: TokenDashboardProvenance;
 }
 
@@ -29,6 +30,7 @@ export function createTokenDashboardProjection(reader: TokenReader): TokenDashbo
         summary: reader.summary(filter),
         time: reader.time({ ...(filter === undefined ? {} : { filter }), max_events: 10_000 }),
         efficiency: reader.efficiency({ ...(filter === undefined ? {} : { filter }), max_events: 10_000 }),
+        costs: reader.costs({ ...(filter === undefined ? {} : { filter }), max_events: 10_000 }).summary,
         provenance: PROVENANCE
       });
     },

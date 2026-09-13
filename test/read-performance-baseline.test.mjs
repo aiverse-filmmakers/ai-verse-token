@@ -39,7 +39,7 @@ test("read surfaces stay within generous first-release performance ceilings", ()
     for(let i=0;i<EVENT_COUNT;i++) ledger.ingestUsageEvent(event(i));
     ledger.close();
 
-    const opened=elapsed(()=>openTokenReader({path}));
+    const opened=elapsed(()=>openTokenReader({path,authorization:{principal_id:"test-owner",mode:"owner"}}));
     assert.ok(opened.ms < 5000,`read-only open ${opened.ms.toFixed(1)}ms exceeded 5000ms`);
     const reader=opened.value;
 

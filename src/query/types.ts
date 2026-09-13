@@ -15,6 +15,7 @@ export interface UsageQueryFilter {
   readonly request_id?: string | null;
   readonly session_id?: string | null;
   readonly task_id?: string | null;
+  readonly run_id?: string | null;
   readonly runtime?: string | null;
   readonly billing_platform?: string | null;
   readonly inference_provider?: string | null;
@@ -26,6 +27,10 @@ export interface UsageQueryFilter {
   readonly agent_id?: string | null;
   readonly bot_id?: string | null;
   readonly worker_id?: string | null;
+  readonly system_id?: string | null;
+  readonly skill_id?: string | null;
+  readonly automation_id?: string | null;
+  readonly tool_id?: string | null;
 }
 
 export interface UsageQueryRequest {
@@ -53,6 +58,11 @@ export const USAGE_GROUP_DIMENSIONS = [
   "agent_id",
   "bot_id",
   "worker_id",
+  "system_id",
+  "skill_id",
+  "automation_id",
+  "tool_id",
+  "run_id",
   "task_id"
 ] as const;
 export type UsageGroupDimension = (typeof USAGE_GROUP_DIMENSIONS)[number];

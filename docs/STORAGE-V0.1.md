@@ -11,9 +11,9 @@ The Token ledger owns telemetry only. It does not own prompts, responses, Memory
 A valid ledger is identified by all of the following:
 
 - `PRAGMA application_id = 0x4156544B` (`AVTK`)
-- `PRAGMA user_version = 1`
+- `PRAGMA user_version = 2`
 - `token_metadata.format = ai-verse-token/sqlite`
-- `token_metadata.format_version = 1`
+- `token_metadata.format_version = 2`
 - `token_metadata.protocol_version = ai-verse-token/0.1`
 
 All checks must agree. A non-empty foreign SQLite database is never adopted or overwritten.

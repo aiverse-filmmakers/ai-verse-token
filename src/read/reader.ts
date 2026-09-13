@@ -1,9 +1,18 @@
-import type { CostResult } from "../cost/types.js";
+import { existsSync } from "node:fs";
+import { CostEngine, type CostResult } from "../cost/index.js";
 import { analyzeEfficiency } from "../efficiency/index.js";
 import type { UsageEvent } from "../protocol/types.js";
-import type { UsageQueryFilter, UsageQueryRequest, UsageQueryResult } from "../query/index.js";
+import {
+  PriceSnapshotStore,
+  createDefaultPricingSourceRegistry,
+  type PriceFreshnessEvidence,
+  type PricingSourceRegistry
+} from "../pricing/index.js";
+import type { UsageAggregateRequest, UsageQueryFilter, UsageQueryRequest, UsageQueryResult } from "../query/index.js";
 import { openTokenLedger, type TokenLedger } from "../storage/index.js";
 import { analyzeUsageTime, rollupUsageTime } from "../time/index.js";
+import { authorizeFilter, validateReadAuthorization, type TokenReadAuthorization } from "./authorization.js";
+import { TokenReadError } from "./reader-error.js";
 import {
   TOKEN_READ_DEFAULT_ANALYSIS_EVENTS,
   TOKEN_READ_MAX_ANALYSIS_EVENTS,
@@ -12,19 +21,14 @@ import {
   type EfficiencyReadResult,
   type TimeReadRequest,
   type TimeReadResult,
+  type TokenCostReadResult,
+  type TokenOverview,
   type TokenReadApi,
   type TokenReadOpenOptions,
   type TokenSummary
 } from "./types.js";
 
-export class TokenReadError extends Error {
-  readonly code: "READ_INVALID" | "READ_LIMIT_EXCEEDED" | "READ_CLOSED";
-  constructor(code: TokenReadError["code"], message: string) {
-    super(message);
-    this.name = "TokenReadError";
-    this.code = code;
-  }
-}
+export { TokenReadError } from "./reader-error.js";
 
 function maxEvents(value: number | undefined): number {
   const result = value ?? TOKEN_READ_DEFAULT_ANALYSIS_EVENTS;
@@ -32,19 +36,6 @@ function maxEvents(value: number | undefined): number {
     throw new TokenReadError("READ_INVALID", `max_events must be an integer in 1..${TOKEN_READ_MAX_ANALYSIS_EVENTS}`);
   }
   return result;
-}
-
-function actualCosts(events: readonly UsageEvent[]): readonly CostResult[] {
-  return Object.freeze(events.flatMap((event): CostResult[] => {
-    if (event.actual_charge === undefined || event.actual_charge === null) return [];
-    return [Object.freeze({
-      status: "ACTUAL",
-      amount: event.actual_charge.amount,
-      currency: event.actual_charge.currency,
-      actual_charge: event.actual_charge,
-      event_id: event.event_id
-    })];
-  }));
 }
 
 function collectBounded(ledger: TokenLedger, request: BoundedReadRequest): readonly UsageEvent[] {
@@ -68,12 +59,45 @@ function collectBounded(ledger: TokenLedger, request: BoundedReadRequest): reado
   return Object.freeze(events);
 }
 
+function freshnessEvidence(store: PriceSnapshotStore | null, registry: PricingSourceRegistry): Readonly<Record<string, PriceFreshnessEvidence | undefined>> {
+  if (store === null) return Object.freeze({});
+  const result: Record<string, PriceFreshnessEvidence | undefined> = {};
+  for (const source of registry.list()) {
+    const state = store.syncState(source.source_id);
+    if (state?.last_checked_at === undefined) continue;
+    if (state.etag === undefined && state.content_digest_sha256 === undefined) continue;
+    result[source.source_id] = Object.freeze({
+      checked_at: state.last_checked_at,
+      ...(state.etag === undefined ? {} : { etag: state.etag }),
+      ...(state.content_digest_sha256 === undefined ? {} : { content_digest_sha256: state.content_digest_sha256 })
+    });
+  }
+  return Object.freeze(result);
+}
+
 export class TokenReader implements TokenReadApi {
   #ledger: TokenLedger;
+  readonly #authorization: TokenReadAuthorization;
+  readonly #pricingStore: PriceSnapshotStore | null;
+  readonly #pricingRegistry: PricingSourceRegistry;
+  readonly #costEngine: CostEngine;
 
-  constructor(ledger: TokenLedger) {
+  constructor(
+    ledger: TokenLedger,
+    options: {
+      readonly authorization: TokenReadAuthorization;
+      readonly pricing_root?: string;
+      readonly pricing_registry?: PricingSourceRegistry;
+    }
+  ) {
     if (!ledger.readOnly) throw new TokenReadError("READ_INVALID", "TokenReader requires a read-only ledger");
     this.#ledger = ledger;
+    this.#authorization = validateReadAuthorization(options.authorization);
+    this.#pricingRegistry = options.pricing_registry ?? createDefaultPricingSourceRegistry();
+    this.#costEngine = new CostEngine(this.#pricingRegistry);
+    this.#pricingStore = options.pricing_root !== undefined && existsSync(options.pricing_root)
+      ? new PriceSnapshotStore(options.pricing_root)
+      : null;
   }
 
   get closed(): boolean {
@@ -84,20 +108,55 @@ export class TokenReader implements TokenReadApi {
     if (this.closed) throw new TokenReadError("READ_CLOSED", "TokenReader is closed");
   }
 
-  query(request: UsageQueryRequest = {}): UsageQueryResult {
-    this.#assertOpen();
-    return this.#ledger.queryUsage(request);
+  #filter(filter: UsageQueryFilter | undefined): UsageQueryFilter | undefined {
+    return authorizeFilter(filter, this.#authorization);
   }
 
-  aggregate(request: Parameters<TokenLedger["aggregateUsage"]>[0]): ReturnType<TokenLedger["aggregateUsage"]> {
+  #bounded(request: BoundedReadRequest): BoundedReadRequest {
+    const filter = this.#filter(request.filter);
+    return Object.freeze({
+      ...(filter === undefined ? {} : { filter }),
+      ...(request.max_events === undefined ? {} : { max_events: request.max_events })
+    });
+  }
+
+  #rate(events: readonly UsageEvent[]): readonly CostResult[] {
+    const snapshots = this.#pricingStore?.list() ?? Object.freeze([]);
+    const evidence = freshnessEvidence(this.#pricingStore, this.#pricingRegistry);
+    return Object.freeze(events.map((event) => this.#costEngine.rate({
+      event,
+      price_snapshots: snapshots,
+      context: { freshness_evidence_by_source: evidence }
+    })));
+  }
+
+  query(request: UsageQueryRequest = {}): UsageQueryResult {
     this.#assertOpen();
-    return this.#ledger.aggregateUsage(request);
+    const filter = this.#filter(request.filter);
+    return this.#ledger.queryUsage({
+      ...(filter === undefined ? {} : { filter }),
+      ...(request.order === undefined ? {} : { order: request.order }),
+      ...(request.limit === undefined ? {} : { limit: request.limit }),
+      ...(request.cursor === undefined ? {} : { cursor: request.cursor })
+    });
+  }
+
+  aggregate(request: UsageAggregateRequest): ReturnType<TokenLedger["aggregateUsage"]> {
+    this.#assertOpen();
+    const filter = this.#filter(request.filter);
+    return this.#ledger.aggregateUsage({
+      ...(filter === undefined ? {} : { filter }),
+      ...(request.groupBy === undefined ? {} : { groupBy: request.groupBy }),
+      metrics: request.metrics,
+      ...(request.limit === undefined ? {} : { limit: request.limit })
+    });
   }
 
   summary(filter?: UsageQueryFilter): TokenSummary {
     this.#assertOpen();
+    const authorizedFilter = this.#filter(filter);
     const result = this.#ledger.aggregateUsage({
-      ...(filter === undefined ? {} : { filter }),
+      ...(authorizedFilter === undefined ? {} : { filter: authorizedFilter }),
       metrics: [
         { operator: "count" },
         { operator: "sum", field: "input_tokens" },
@@ -123,9 +182,32 @@ export class TokenReader implements TokenReadApi {
     });
   }
 
+  costs(request: BoundedReadRequest = {}): TokenCostReadResult {
+    this.#assertOpen();
+    const events = collectBounded(this.#ledger, this.#bounded(request));
+    const results = this.#rate(events);
+    const coverage = analyzeEfficiency({ events, costs: results }).overall.costs;
+    return Object.freeze({ event_count: events.length, results, summary: coverage });
+  }
+
+  overview(request: BoundedReadRequest = {}): TokenOverview {
+    this.#assertOpen();
+    const bounded = this.#bounded(request);
+    const events = collectBounded(this.#ledger, bounded);
+    const results = this.#rate(events);
+    const coverage = analyzeEfficiency({ events, costs: results }).overall.costs;
+    return Object.freeze({
+      owner: "ai-verse-token",
+      attribution_is_authority: false,
+      summary: this.summary(bounded.filter),
+      costs: coverage
+    });
+  }
+
   time(request: TimeReadRequest = {}): TimeReadResult {
     this.#assertOpen();
-    const events = collectBounded(this.#ledger, request);
+    const bounded = this.#bounded(request);
+    const events = collectBounded(this.#ledger, bounded);
     return Object.freeze({
       event_count: events.length,
       analysis: analyzeUsageTime(events),
@@ -135,16 +217,18 @@ export class TokenReader implements TokenReadApi {
 
   efficiency(request: EfficiencyReadRequest = {}): EfficiencyReadResult {
     this.#assertOpen();
-    const events = collectBounded(this.#ledger, request);
+    const bounded = this.#bounded(request);
+    const events = collectBounded(this.#ledger, bounded);
+    const costs = this.#rate(events);
     return Object.freeze({
       event_count: events.length,
       analysis: analyzeEfficiency({
         events,
-        costs: actualCosts(events),
+        costs,
         ...(request.group_by === undefined ? {} : { group_by: request.group_by }),
         ...(request.retry_links === undefined ? {} : { retry_links: request.retry_links })
       }),
-      cost_scope: "actual_only"
+      cost_scope: "actual_calculated_unknown"
     });
   }
 
@@ -154,5 +238,9 @@ export class TokenReader implements TokenReadApi {
 }
 
 export function openTokenReader(options: TokenReadOpenOptions): TokenReader {
-  return new TokenReader(openTokenLedger({ path: options.path, mode: "read-only" }));
+  return new TokenReader(openTokenLedger({ path: options.path, mode: "read-only" }), {
+    authorization: options.authorization,
+    ...(options.pricing_root === undefined ? {} : { pricing_root: options.pricing_root }),
+    ...(options.pricing_registry === undefined ? {} : { pricing_registry: options.pricing_registry })
+  });
 }

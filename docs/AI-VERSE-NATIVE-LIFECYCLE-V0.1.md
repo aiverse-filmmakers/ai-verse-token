@@ -1,6 +1,6 @@
 # AI-Verse Native Lifecycle v0.1
 
-Status: first-release contract, Task 30 / 32.
+Status: public-beta lifecycle contract, updated 2026-09-13.
 
 ## Purpose
 
@@ -27,21 +27,24 @@ Token registers only:
   extensions["ai-verse-token"]
 ```
 
-Token-owned installed files are:
+Token-owned installed software is:
 
 ```text
 .aiverse/extensions/ai-verse-token/INSTRUCTIONS.md
 .aiverse/extensions/ai-verse-token/engine.mjs
 .aiverse/extensions/ai-verse-token/extension.json
+.aiverse/extensions/ai-verse-token/bundle/
 ```
 
 Token native user state is:
 
 ```text
 .aiverse/extensions/ai-verse-token/state/token.sqlite
+.aiverse/extensions/ai-verse-token/state/runtime.json
+.aiverse/extensions/ai-verse-token/state/pricing/
 ```
 
-The state path is deliberately not an installer-owned file. Installation creates no telemetry ledger. Uninstall removes the three installed files and Token's registry entry, but preserves `state/` and any existing ledger.
+The state path is deliberately not installer-owned software. Installation creates no telemetry ledger. Setup initializes Token-owned state. Uninstall removes Token integration and the replaceable runtime bundle, but preserves `state/`, the ledger, runtime configuration and pricing evidence.
 
 ## Registry semantics
 
@@ -55,7 +58,7 @@ The Token entry is materialized with:
   "supported": true,
   "installed": true,
   "enabled": true,
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-beta.1",
   "source": "AI-Verse-Token",
   "instructions": ".aiverse/extensions/ai-verse-token/INSTRUCTIONS.md",
   "engine": ".aiverse/extensions/ai-verse-token/engine.mjs",
@@ -86,12 +89,16 @@ Lock contention fails closed. A stale registry snapshot cannot overwrite a compe
 
 ```bash
 ai-verse-token install --root <ai-verse-os-root> [--json]
+ai-verse-token setup --root <ai-verse-os-root> [--json]
+ai-verse-token status --root <ai-verse-os-root> [--json]
+ai-verse-token doctor --root <ai-verse-os-root> [--json]
+ai-verse-token collect --root <ai-verse-os-root> [--json]
+ai-verse-token prices sync --root <ai-verse-os-root> [--json]
+ai-verse-token usage --root <ai-verse-os-root> [--json]
 ai-verse-token update --root <ai-verse-os-root> [--json]
 ai-verse-token enable --root <ai-verse-os-root> [--json]
 ai-verse-token disable --root <ai-verse-os-root> [--json]
 ai-verse-token uninstall --root <ai-verse-os-root> [--json]
-ai-verse-token status --root <candidate-root> [--json]
-ai-verse-token doctor --root <candidate-root> [--json]
 ```
 
 Lifecycle commands require a compatible AI-Verse host. `status` and `doctor` also support standalone reporting.
@@ -104,16 +111,9 @@ Exit behavior:
 
 ## Status and doctor
 
-`status` is a light, read-only inspection of:
+`status` is a fast non-destructive operational state summary. `doctor` performs deeper read-only structural, attachment/discovery, runtime, dependency and operational checks, including ledger integrity, local collector detection, pricing evidence and primary ACTUAL/CALCULATED/UNKNOWN support.
 
-- host compatibility;
-- Token registration;
-- installed-file materialization;
-- native ledger presence.
-
-`doctor` additionally opens an existing native ledger read-only and runs Token's quick integrity check.
-
-A missing ledger is a notice because installation never creates usage state. A disabled extension is also a notice, not corruption. A malformed or unhealthy existing ledger is a doctor problem and is never repaired automatically.
+Install without setup reports `setup-required`. A disabled extension reports `disabled`, not corruption. Missing pricing evidence is reported explicitly and leaves unpriceable usage UNKNOWN rather than zero.
 
 ## Non-negotiable boundaries
 

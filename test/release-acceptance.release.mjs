@@ -75,11 +75,11 @@ test("packed artifact installs on a clean project and exposes package plus CLI w
     writeFileSync(join(project, "package.json"), JSON.stringify({ name: "token-clean-install", private: true, type: "module" }));
     execFileSync(npm, ["install", tarball, "--ignore-scripts", "--no-audit", "--no-fund"], { cwd: project, stdio: "pipe" });
     const version = execFileSync(process.execPath, ["--input-type=module", "--eval", "import { PACKAGE_VERSION } from '@ai-verse/token'; process.stdout.write(PACKAGE_VERSION);"], { cwd: project, encoding: "utf8" });
-    assert.equal(version, "0.1.0-alpha.1");
+    assert.equal(version, "0.1.0-beta.1");
     const cli = execFileSync(process.execPath, [join(project, "node_modules", "@ai-verse", "token", "bin", "ai-verse-token.mjs"), "--version"], { cwd: project, encoding: "utf8" });
-    assert.equal(cli.trim(), "0.1.0-alpha.1");
+    assert.equal(cli.trim(), "0.1.0-beta.1");
     const oneCommand = execFileSync(npm, ["exec", "--yes", "--package", tarball, "--", "ai-verse-token", "--version"], { cwd: work, encoding: "utf8" });
-    assert.equal(oneCommand.trim(), "0.1.0-alpha.1");
+    assert.equal(oneCommand.trim(), "0.1.0-beta.1");
     assert.equal(existsSync(join(project, "node_modules", "@ai-verse", "token", "src")), false);
     assert.equal(existsSync(join(project, "node_modules", "@ai-verse", "token", "test")), false);
   } finally { rmSync(work, { recursive: true, force: true }); }
@@ -109,7 +109,7 @@ test("release story preserves ACTUAL/CALCULATED/UNKNOWN truth and native state a
     ledger.ingestUsageEvent(actual);
     ledger.close();
 
-    const reader = openTokenReader({ path: ledgerPath });
+    const reader = openTokenReader({ path: ledgerPath, authorization: { principal_id: "test-owner", mode: "owner" } });
     const dashboard = createTokenDashboardProjection(reader).overview();
     assert.equal(dashboard.summary.request_count, 1);
     assert.equal(dashboard.efficiency.analysis.overall.costs.actual_event_count, 1);

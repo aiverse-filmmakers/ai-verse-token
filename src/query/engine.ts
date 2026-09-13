@@ -41,6 +41,7 @@ const FILTER_COLUMNS: Readonly<Record<string, string>> = Object.freeze({
   request_id: "request_id",
   session_id: "session_id",
   task_id: "task_id",
+  run_id: "run_id",
   runtime: "runtime",
   billing_platform: "billing_platform",
   inference_provider: "inference_provider",
@@ -51,7 +52,11 @@ const FILTER_COLUMNS: Readonly<Record<string, string>> = Object.freeze({
   project_id: "project_id",
   agent_id: "agent_id",
   bot_id: "bot_id",
-  worker_id: "worker_id"
+  worker_id: "worker_id",
+  system_id: "system_id",
+  skill_id: "skill_id",
+  automation_id: "automation_id",
+  tool_id: "tool_id"
 });
 
 const INTEGER_AGGREGATE_FIELDS = new Set<UsageAggregateField>([

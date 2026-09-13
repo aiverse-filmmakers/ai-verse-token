@@ -234,8 +234,9 @@ test("native CLI install/status/disable/enable/uninstall has stable JSON behavio
     const installed = JSON.parse(execFileSync(process.execPath, [cli.pathname, "install", "--root", root, "--json"], { encoding: "utf8" }));
     assert.equal(installed.status, "installed");
     const status = JSON.parse(execFileSync(process.execPath, [cli.pathname, "status", "--root", root, "--json"], { encoding: "utf8" }));
-    assert.equal(status.healthy, true);
-    assert.equal(status.mode, "ai-verse-os-v2");
+    assert.equal(status.state, "setup-required");
+    assert.equal(status.ready, false);
+    assert.equal(status.installed, true);
     execFileSync(process.execPath, [cli.pathname, "disable", "--root", root, "--json"], { encoding: "utf8" });
     execFileSync(process.execPath, [cli.pathname, "enable", "--root", root, "--json"], { encoding: "utf8" });
     const removed = JSON.parse(execFileSync(process.execPath, [cli.pathname, "uninstall", "--root", root, "--json"], { encoding: "utf8" }));

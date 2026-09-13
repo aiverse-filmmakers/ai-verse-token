@@ -1,6 +1,6 @@
 {
   "name": "@ai-verse/token",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-beta.1",
   "description": "Headless LLM, agent and AI-OS token, cost and runtime usage intelligence.",
   "type": "module",
   "engines": {
@@ -75,6 +75,14 @@
       "types": "./dist/src/native/index.d.ts",
       "import": "./dist/src/native/index.js"
     },
+    "./runtime": {
+      "types": "./dist/src/runtime/index.d.ts",
+      "import": "./dist/src/runtime/index.js"
+    },
+    "./gateway": {
+      "types": "./dist/src/gateway/index.d.ts",
+      "import": "./dist/src/gateway/index.js"
+    },
     "./dashboard": {
       "types": "./dist/src/dashboard/index.d.ts",
       "import": "./dist/src/dashboard/index.js"
@@ -108,7 +116,8 @@
     "bin/",
     "dist/",
     "README.md",
-    "THIRD-PARTY-NOTICES.md"
+    "THIRD-PARTY-NOTICES.md",
+    "PROVENANCE.md"
   ],
   "scripts": {
     "clean": "node --eval \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",

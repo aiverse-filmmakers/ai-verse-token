@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { runCli } from "../dist/src/cli.js";
+import { runCliAsync } from "../dist/src/cli.js";
 
-const code = runCli(process.argv.slice(2), {
+const code = await runCliAsync(process.argv.slice(2), {
   stdout(value) {
     process.stdout.write(value.endsWith("\n") ? value : `${value}\n`);
   },
