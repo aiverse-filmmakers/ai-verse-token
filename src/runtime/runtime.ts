@@ -203,9 +203,16 @@ export async function doctorTokenRuntime(rootPath: string): Promise<TokenOperati
   const snapshotCount = setup ? safeSnapshotCount(native.root_path) : 0;
   if (setup) {
     const pricingRoot = safeRelativePath(native.root_path, AI_VERSE_TOKEN_PRICING_ROOT);
-    if (existsSync(`${pricingRoot}/snapshots`) && existsSync(`${pricingRoot}/sync-state`)) {
+    const snapshotsPath = `${pricingRoot}/snapshots`;
+    const syncStatePath = `${pricingRoot}/sync-state`;
+    if (!existsSync(snapshotsPath) || !existsSync(syncStatePath)) {
+      problems.push({
+        code: "PRICING_STORE_UNHEALTHY",
+        message: "Pricing store is incomplete: expected snapshots and sync-state directories are missing. Doctor is read-only and did not repair or create them."
+      });
+    } else {
       try { openrouterStatus = new PriceSnapshotStore(pricingRoot).syncState("openrouter-models-api")?.last_status ?? null; }
-      catch (error) { notices.push({ code: "PRICING_STORE_UNHEALTHY", message: error instanceof Error ? error.message : String(error) }); }
+      catch (error) { problems.push({ code: "PRICING_STORE_UNHEALTHY", message: error instanceof Error ? error.message : String(error) }); }
     }
     if (snapshotCount === 0) notices.push({ code: "PRICING_NOT_YET_SYNCED", message: "No verified pricing snapshot is stored yet. ACTUAL remains available and unpriceable events remain UNKNOWN, never zero." });
   }
