@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { createReadOnlyMcpSurface } from "../dist/src/mcp/index.js";
 import { exportUsage } from "../dist/src/export/index.js";
 import { openTokenReader } from "../dist/src/read/index.js";
@@ -127,16 +128,16 @@ test("read-only MCP surface exposes only bounded read tools and privacy-safe eve
 
 test("CLI summary/query/export work against a read-only ledger with JSON-safe defaults", () => {
   const f=fixture();
-  const cli=new URL("../bin/ai-verse-token.mjs", import.meta.url);
+  const cli=fileURLToPath(new URL("../bin/ai-verse-token.mjs", import.meta.url));
   try {
-    const summary=JSON.parse(execFileSync(process.execPath,[cli.pathname,"summary","--db",f.path,"--json"],{encoding:"utf8"}));
+    const summary=JSON.parse(execFileSync(process.execPath,[cli,"summary","--db",f.path,"--json"],{encoding:"utf8"}));
     assert.equal(summary.request_count,2);
-    const query=JSON.parse(execFileSync(process.execPath,[cli.pathname,"query","--db",f.path,"--limit","1","--json"],{encoding:"utf8"}));
+    const query=JSON.parse(execFileSync(process.execPath,[cli,"query","--db",f.path,"--limit","1","--json"],{encoding:"utf8"}));
     assert.equal(query.events.length,1);
     assert.equal("source_record_fingerprint" in query.events[0].provenance,false);
-    const csv=execFileSync(process.execPath,[cli.pathname,"export","--db",f.path,"--format","csv"],{encoding:"utf8"});
+    const csv=execFileSync(process.execPath,[cli,"export","--db",f.path,"--format","csv"],{encoding:"utf8"});
     assert.match(csv,/evt_read_1/);
-    const bad=spawnSync(process.execPath,[cli.pathname,"summary"],{encoding:"utf8"});
+    const bad=spawnSync(process.execPath,[cli,"summary"],{encoding:"utf8"});
     assert.equal(bad.status,2);
     assert.match(bad.stderr,/--db is required/);
   } finally { f.cleanup(); }
