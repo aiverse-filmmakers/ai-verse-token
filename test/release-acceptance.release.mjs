@@ -17,7 +17,12 @@ import { createDefaultPricingSourceRegistry } from "../dist/src/pricing/index.js
 import { openTokenReader } from "../dist/src/read/index.js";
 import { openTokenLedger } from "../dist/src/storage/index.js";
 
-const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+const npmExecPath = process.env.npm_execpath ?? null;
+
+function runNpm(args, options = {}) {
+  if (npmExecPath) return execFileSync(process.execPath, [npmExecPath, ...args], options);
+  return execFileSync("npm", args, { ...options, shell: process.platform === "win32" });
+}
 
 function osFixture() {
   const root = mkdtempSync(join(tmpdir(), "token-release-os-"));
@@ -68,17 +73,17 @@ test("packed artifact installs on a clean project and exposes package plus CLI w
   mkdirSync(packDir);
   mkdirSync(project);
   try {
-    const filename = execFileSync(npm, ["pack", "--ignore-scripts", "--pack-destination", packDir], { cwd: new URL("..", import.meta.url), encoding: "utf8" }).trim().split(/\r?\n/).at(-1);
+    const filename = runNpm(["pack", "--ignore-scripts", "--pack-destination", packDir], { cwd: new URL("..", import.meta.url), encoding: "utf8" }).trim().split(/\r?\n/).at(-1);
     assert.ok(filename);
     const tarball = join(packDir, filename);
     assert.equal(existsSync(tarball), true);
     writeFileSync(join(project, "package.json"), JSON.stringify({ name: "token-clean-install", private: true, type: "module" }));
-    execFileSync(npm, ["install", tarball, "--ignore-scripts", "--no-audit", "--no-fund"], { cwd: project, stdio: "pipe" });
+    runNpm(["install", tarball, "--ignore-scripts", "--no-audit", "--no-fund"], { cwd: project, stdio: "pipe" });
     const version = execFileSync(process.execPath, ["--input-type=module", "--eval", "import { PACKAGE_VERSION } from '@ai-verse/token'; process.stdout.write(PACKAGE_VERSION);"], { cwd: project, encoding: "utf8" });
     assert.equal(version, "0.1.0-beta.2");
     const cli = execFileSync(process.execPath, [join(project, "node_modules", "@ai-verse", "token", "bin", "ai-verse-token.mjs"), "--version"], { cwd: project, encoding: "utf8" });
     assert.equal(cli.trim(), "0.1.0-beta.2");
-    const oneCommand = execFileSync(npm, ["exec", "--yes", "--package", tarball, "--", "ai-verse-token", "--version"], { cwd: work, encoding: "utf8" });
+    const oneCommand = runNpm(["exec", "--yes", "--package", tarball, "--", "ai-verse-token", "--version"], { cwd: work, encoding: "utf8" });
     assert.equal(oneCommand.trim(), "0.1.0-beta.2");
     assert.equal(existsSync(join(project, "node_modules", "@ai-verse", "token", "src")), false);
     assert.equal(existsSync(join(project, "node_modules", "@ai-verse", "token", "test")), false);
