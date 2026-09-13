@@ -1,7 +1,7 @@
 # AI-Verse Token
 
 **Status:** Public-beta implementation candidate
-**Version:** `@ai-verse/token@0.1.0-beta.2`
+**Version:** `@ai-verse/token@0.1.0-beta.3`
 **CLI:** `ai-verse-token`
 **Extension id:** `ai-verse-token`
 
@@ -23,7 +23,7 @@ AI-Verse Token is the canonical usage, token, timing and AI-cost telemetry owner
 From an immutable package artifact:
 
 ```bash
-npm install ./ai-verse-token-0.1.0-beta.2.tgz
+npm install ./ai-verse-token-0.1.0-beta.3.tgz
 ```
 
 For an AI-Verse OS root:
@@ -177,12 +177,12 @@ Local public-beta acceptance currently passes:
 
 ```text
 TypeScript check: PASS
-Normal tests: 255 / 255
+Normal tests: 256 / 256
 Release acceptance: 3 / 3
 Clean packed install: PASS
 npm pack dry-run: PASS
 ```
 
-The repository includes a six-leg GitHub Actions matrix for Linux, macOS and Windows on Node 22 and 24. Hosted cross-platform execution requires the canonical GitHub repository to exist.
+The repository includes a six-leg GitHub Actions matrix for Linux, macOS and Windows on Node 22 and 24. Hosted cross-platform verification is required on the canonical GitHub repository before the beta.3 tag is sealed.
 
 See [`docs/PACKAGING-RELEASE-ACCEPTANCE-V0.1.md`](docs/PACKAGING-RELEASE-ACCEPTANCE-V0.1.md) and [`docs/HARDENING-AUDIT-2026-09-12.md`](docs/HARDENING-AUDIT-2026-09-12.md).
