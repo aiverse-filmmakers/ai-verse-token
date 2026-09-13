@@ -7,7 +7,7 @@ Status: public-beta.1 release acceptance, updated 2026-09-13.
 Package:
 
 ```text
-@ai-verse/token@0.1.0-beta.1
+@ai-verse/token@0.1.0-beta.2
 ```
 
 CLI:
@@ -34,13 +34,13 @@ Source TypeScript, tests, planning fixtures and local telemetry databases are no
 A packed/local release can be installed with:
 
 ```bash
-npm install ./ai-verse-token-0.1.0-beta.1.tgz
+npm install ./ai-verse-token-0.1.0-beta.2.tgz
 ```
 
 It can also be executed without a permanent project install:
 
 ```bash
-npm exec --yes --package ./ai-verse-token-0.1.0-beta.1.tgz -- ai-verse-token --version
+npm exec --yes --package ./ai-verse-token-0.1.0-beta.2.tgz -- ai-verse-token --version
 ```
 
 After npm publication, the intended one-command native path is:
