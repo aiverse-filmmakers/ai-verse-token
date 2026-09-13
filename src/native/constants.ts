@@ -1,6 +1,6 @@
 export const AI_VERSE_TOKEN_EXTENSION_ID = "ai-verse-token" as const;
 export const AI_VERSE_TOKEN_EXTENSION_SOURCE = "AI-Verse-Token" as const;
-export const AI_VERSE_TOKEN_EXTENSION_VERSION = "0.1.0-beta.2" as const;
+export const AI_VERSE_TOKEN_EXTENSION_VERSION = "0.1.0-beta.3" as const;
 export const AI_VERSE_TOKEN_EXTENSION_ROOT = ".aiverse/extensions/ai-verse-token" as const;
 export const AI_VERSE_TOKEN_EXTENSION_INSTRUCTIONS = ".aiverse/extensions/ai-verse-token/INSTRUCTIONS.md" as const;
 export const AI_VERSE_TOKEN_EXTENSION_ENGINE = ".aiverse/extensions/ai-verse-token/engine.mjs" as const;
