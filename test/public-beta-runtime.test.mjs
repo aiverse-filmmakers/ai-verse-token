@@ -142,6 +142,24 @@ test("default runtime orchestration discovers and actually collects Codex usage"
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test("doctor is read-only and reports incomplete pricing state as unhealthy", async () => {
+  const root = osFixture();
+  try {
+    const roots = emptySourceRoots(root);
+    installTokenExtension(root);
+    await setupTokenRuntime(root, { source_roots: roots, sync_pricing: false });
+    const syncStatePath = join(root, AI_VERSE_TOKEN_PRICING_ROOT, "sync-state");
+    rmSync(syncStatePath, { recursive: true, force: true });
+    assert.equal(existsSync(syncStatePath), false);
+
+    const doctor = await doctorTokenRuntime(root);
+    assert.equal(doctor.state, "unhealthy");
+    assert.equal(doctor.ready, false);
+    assert.equal(doctor.problems.some((item) => item.code === "PRICING_STORE_UNHEALTHY"), true);
+    assert.equal(existsSync(syncStatePath), false);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test("primary read reports ACTUAL, CALCULATED and UNKNOWN without turning unknown into zero", () => {
   const root = mkdtempSync(join(tmpdir(), "token-beta-read-"));
   const db = join(root, "token.sqlite");
