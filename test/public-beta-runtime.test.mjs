@@ -17,6 +17,7 @@ import { PriceSnapshotStore, createOpenRouterModelsFetcher } from "../dist/src/p
 import { openTokenReader } from "../dist/src/read/index.js";
 import { openTokenGatewayProjection } from "../dist/src/gateway/index.js";
 import { openTokenLedger } from "../dist/src/storage/index.js";
+import { trustedActual } from "./trusted-actual-fixture.mjs";
 
 function osFixture() {
   const root = mkdtempSync(join(tmpdir(), "token-beta-host-"));
@@ -166,7 +167,7 @@ test("primary read reports ACTUAL, CALCULATED and UNKNOWN without turning unknow
   const pricing = join(root, "pricing");
   try {
     const ledger = openTokenLedger({ path: db });
-    ledger.ingestUsageEvent(event("actual", { actual_charge: { amount: "0", currency: "USD", source: "provider_reported" } }));
+    ledger.ingestUsageEvent(trustedActual(event("actual", { actual_charge: { amount: "0", currency: "USD", source: "provider_reported" } })));
     ledger.ingestUsageEvent(event("calculated"));
     ledger.ingestUsageEvent(event("unknown", { identity: { billing_platform: "openrouter", inference_provider: "anthropic", requested_model: "missing", resolved_model: "missing", provider_model_id: "missing" } }));
     ledger.close();
