@@ -1,4 +1,4 @@
-import { validateUsageEvent } from "../protocol/validation.js";
+import { normalizeUsageEventWithTrustedActualChargeAdmission } from "../cost/trusted-actual-admission.js";
 import type { IngestUsageEventResult } from "../storage/index.js";
 import { CollectorRegistry } from "./registry.js";
 import type {
@@ -81,11 +81,11 @@ function normalizeEmission(
   collectorId: string,
   collectorVersion: string,
   runtimes: CollectorRuntimeScope
-): { event: ReturnType<typeof validateUsageEvent>; checkpoint: string; correlations: CollectorEmission["correlation_keys"] } {
+): { event: ReturnType<typeof normalizeUsageEventWithTrustedActualChargeAdmission>; checkpoint: string; correlations: CollectorEmission["correlation_keys"] } {
   if (typeof emission !== "object" || emission === null) {
     throw new CollectorExecutionError("COLLECTOR_SCAN_INVALID", "collector emission must be an object");
   }
-  const event = validateUsageEvent(emission.event);
+  const event = normalizeUsageEventWithTrustedActualChargeAdmission(emission.event);
   if (event.provenance.collector_id !== collectorId) {
     throw new CollectorExecutionError(
       "COLLECTOR_PROVENANCE_MISMATCH",
