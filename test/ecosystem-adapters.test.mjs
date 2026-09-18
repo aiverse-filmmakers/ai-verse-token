@@ -12,6 +12,7 @@ import { correlateTokenUsage } from "../dist/src/correlation/index.js";
 import { createTokenCredentialHandle } from "../dist/src/connections/index.js";
 import { openTokenReader } from "../dist/src/read/index.js";
 import { openTokenLedger } from "../dist/src/storage/index.js";
+import { trustedActual } from "./trusted-actual-fixture.mjs";
 
 function event(id, overrides = {}) {
   return {
@@ -34,7 +35,7 @@ function event(id, overrides = {}) {
 function fixture() {
   const dir = mkdtempSync(join(tmpdir(), "token-ecosystem-"));
   const path = join(dir, "token.sqlite");
-  const first = event("evt_ecosystem_1", { actual_charge: { amount: "0.1", currency: "USD", source: "provider_reported" } });
+  const first = trustedActual(event("evt_ecosystem_1", { actual_charge: { amount: "0.1", currency: "USD", source: "provider_reported" } }));
   const second = event("evt_ecosystem_2", { observed_at: "2026-09-12T10:01:00Z" });
   const ledger = openTokenLedger({ path });
   ledger.ingestUsageEvent(first);

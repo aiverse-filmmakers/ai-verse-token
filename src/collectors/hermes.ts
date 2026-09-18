@@ -3,6 +3,7 @@ import { existsSync, lstatSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { createDefaultActualCostSourceRegistry } from "../cost/actual.js";
+import { sealTrustedActualChargeEvent } from "../cost/trusted-actual-admission.js";
 import { validateUsageEvent } from "../protocol/validation.js";
 import type { UsageEvent } from "../protocol/types.js";
 import type {
@@ -276,13 +277,14 @@ function attachHermesActualIfUnambiguous(event: UsageEvent, row: SqlRecord, reco
   if (status !== "actual" || costSource === null || row.actual_cost_usd === null || row.actual_cost_usd === undefined) return event;
   const actual = Number(row.actual_cost_usd);
   if (!Number.isFinite(actual) || actual < 0) return event;
-  return actualCostRegistry.attach(event, {
+  const attached = actualCostRegistry.attach(event, {
     source_id: "hermes-state-db",
     amount: actual,
     currency: "USD",
     external_charge_id: recordKey,
     reported_at: event.observed_at
-  }).event;
+  });
+  return sealTrustedActualChargeEvent(attached.event, attached.source.source_id);
 }
 
 function modelUsageCandidates(

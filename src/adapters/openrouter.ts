@@ -1,4 +1,5 @@
 import { createDefaultActualCostSourceRegistry } from "../cost/actual.js";
+import { sealTrustedActualChargeEvent } from "../cost/trusted-actual-admission.js";
 import type { UsageCounts, UsageEvent, UsageTiming } from "../protocol/types.js";
 import {
   RemoteAdapterError,
@@ -109,13 +110,14 @@ export function normalizeOpenRouterGeneration(value: unknown): OpenRouterGenerat
   });
 
   if (cost !== null) {
-    event = createDefaultActualCostSourceRegistry().attach(event, {
+    const attached = createDefaultActualCostSourceRegistry().attach(event, {
       source_id: "openrouter-generation-api",
       amount: cost,
       currency: "USD",
       external_charge_id: generationId,
       reported_at: createdAt
-    }).event;
+    });
+    event = sealTrustedActualChargeEvent(attached.event, attached.source.source_id);
   }
 
   return Object.freeze({ event, generation_id: generationId, upstream_id: upstreamId, provider_name: provider });

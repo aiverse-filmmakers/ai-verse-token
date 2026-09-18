@@ -9,6 +9,7 @@ import { createReadOnlyMcpSurface } from "../dist/src/mcp/index.js";
 import { exportUsage } from "../dist/src/export/index.js";
 import { openTokenReader } from "../dist/src/read/index.js";
 import { openTokenLedger } from "../dist/src/storage/index.js";
+import { trustedActual } from "./trusted-actual-fixture.mjs";
 
 function usageEvent(id, overrides={}) {
   return {
@@ -29,7 +30,7 @@ function fixture() {
   const dir=mkdtempSync(join(tmpdir(),"ai-verse-token-read-"));
   const path=join(dir,"token.sqlite");
   const ledger=openTokenLedger({path});
-  ledger.ingestUsageEvent(usageEvent("evt_read_1", {actual_charge:{amount:"0.25",currency:"USD",source:"provider_reported",external_charge_id:"charge-1"}}));
+  ledger.ingestUsageEvent(trustedActual(usageEvent("evt_read_1", {actual_charge:{amount:"0.25",currency:"USD",source:"provider_reported",external_charge_id:"charge-1"}})));
   ledger.ingestUsageEvent(usageEvent("evt_read_2", {observed_at:"2026-09-12T10:01:00Z"}));
   ledger.close();
   return {dir,path,cleanup(){rmSync(dir,{recursive:true,force:true});}};

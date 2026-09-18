@@ -9,6 +9,7 @@ export type TokenLedgerErrorCode =
   | "CLOSED"
   | "READ_ONLY"
   | "INGEST_INVALID"
+  | "ACTUAL_CHARGE_UNTRUSTED"
   | "INGEST_CONFLICT";
 
 export class TokenLedgerError extends Error {
