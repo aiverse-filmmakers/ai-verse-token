@@ -11,6 +11,7 @@ import {
   normalizeOpenTelemetryGenAISpan
 } from "../dist/src/adapters/index.js";
 import { TokenLedgerError, openTokenLedger } from "../dist/src/storage/index.js";
+import { trustedActual } from "./trusted-actual-fixture.mjs";
 
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), "ai-verse-token-otel-gateway-"));
@@ -21,8 +22,8 @@ function cleanup(root) {
   rmSync(root, { recursive: true, force: true });
 }
 
-function event({ id, collector, runtime, requestId = "resp_shared", usage = {}, scope, actualCharge } = {}) {
-  return {
+function event({ id, collector, runtime, requestId = "resp_shared", usage = {}, scope, actualCharge, billingPlatform = "openai" } = {}) {
+  const value = {
     schema_version: "ai-verse-token/0.1",
     event_id: id,
     request_id: requestId,
@@ -30,11 +31,11 @@ function event({ id, collector, runtime, requestId = "resp_shared", usage = {}, 
       runtime,
       source_type: `${runtime}.test`,
       source_record_id: id,
-      source_platform: "openai"
+      source_platform: billingPlatform
     },
     observed_at: "2026-09-12T18:00:00Z",
     identity: {
-      billing_platform: "openai",
+      billing_platform: billingPlatform,
       inference_provider: "openai",
       requested_model: "gpt-5.6-sol",
       resolved_model: "gpt-5.6-sol"
@@ -59,6 +60,7 @@ function event({ id, collector, runtime, requestId = "resp_shared", usage = {}, 
       content_stored: false
     }
   };
+  return actualCharge ? trustedActual(value) : value;
 }
 
 test("OpenTelemetry GenAI span decomposes inclusive cache/reasoning counters and ignores sensitive content attributes", () => {
@@ -223,13 +225,15 @@ test("strong cross-source correlation keeps raw observations but normal query an
       id: "evt_local",
       collector: "local-runtime",
       runtime: "hermes",
-      scope: { workspace_id: "workspace-1", agent_id: "agent-1" }
+      scope: { workspace_id: "workspace-1", agent_id: "agent-1" },
+      billingPlatform: "openrouter"
     }));
-    ledger.ingestUsageEvent(event({ id: "evt_gateway", collector: "gateway-runtime", runtime: "litellm" }));
+    ledger.ingestUsageEvent(event({ id: "evt_gateway", collector: "gateway-runtime", runtime: "litellm", billingPlatform: "openrouter" }));
     ledger.ingestUsageEvent(event({
       id: "evt_provider",
       collector: "provider-api",
       runtime: "openai",
+      billingPlatform: "openrouter",
       actualCharge: {
         amount: "0.0123",
         currency: "USD",
