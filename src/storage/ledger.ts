@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { existsSync, lstatSync, realpathSync } from "node:fs";
+import { hasTrustedActualChargeAdmission } from "../cost/trusted-actual-admission.js";
 import { basename, dirname, join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { TOKEN_PROTOCOL_VERSION } from "../protocol/constants.js";
@@ -1022,6 +1023,16 @@ export class TokenLedger {
     }
 
     const event = validateUsageEvent(value);
+    if (
+      event.actual_charge !== undefined
+      && event.actual_charge !== null
+      && !hasTrustedActualChargeAdmission(value, event)
+    ) {
+      throw new TokenLedgerError(
+        "ACTUAL_CHARGE_UNTRUSTED",
+        `Usage event ${event.event_id} carries ACTUAL money without trusted source admission`
+      );
+    }
     const eventJson = JSON.stringify(event);
     const correlations = normalizeCorrelationKeys(event, options.correlationKeys);
     const checkpoint = normalizeCheckpoint(options.checkpoint);
