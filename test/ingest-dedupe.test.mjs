@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { TokenLedgerError, openTokenLedger } from "../dist/src/storage/index.js";
+import { trustedActual } from "./trusted-actual-fixture.mjs";
 
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), "ai-verse-token-ingest-"));
@@ -73,6 +74,10 @@ function validEvent(overrides = {}) {
   return Object.assign(event, overrides);
 }
 
+function trustedEvent(overrides = {}) {
+  return trustedActual(validEvent(overrides));
+}
+
 function eventCount(path) {
   const raw = new DatabaseSync(path, { readOnly: true });
   const count = raw.prepare("SELECT COUNT(*) AS count FROM usage_events").get().count;
@@ -84,7 +89,7 @@ test("inserts one canonical immutable usage event", () => {
   const { root, dbPath } = fixture();
   try {
     const ledger = openTokenLedger({ path: dbPath });
-    const result = ledger.ingestUsageEvent(validEvent());
+    const result = ledger.ingestUsageEvent(trustedEvent());
     assert.deepEqual(result, {
       status: "inserted",
       eventId: "evt_ingest_1",
@@ -103,8 +108,8 @@ test("exact event replay is a no-op", () => {
   const { root, dbPath } = fixture();
   try {
     const ledger = openTokenLedger({ path: dbPath });
-    ledger.ingestUsageEvent(validEvent());
-    const replay = ledger.ingestUsageEvent(validEvent());
+    ledger.ingestUsageEvent(trustedEvent());
+    const replay = ledger.ingestUsageEvent(trustedEvent());
     assert.equal(replay.status, "duplicate");
     assert.equal(replay.duplicateOf, "evt_ingest_1");
     assert.equal(replay.correlationKeysAdded, 0);
@@ -119,10 +124,10 @@ test("same source fingerprint dedupes a replay with a new event id and observati
   const { root, dbPath } = fixture();
   try {
     const ledger = openTokenLedger({ path: dbPath });
-    ledger.ingestUsageEvent(validEvent());
+    ledger.ingestUsageEvent(trustedEvent());
     const replay = validEvent({ event_id: "evt_ingest_replay", observed_at: "2026-09-12T17:00:00Z" });
     replay.provenance.collector_version = "0.2.0";
-    const result = ledger.ingestUsageEvent(replay);
+    const result = ledger.ingestUsageEvent(trustedActual(replay));
     assert.equal(result.status, "duplicate");
     assert.equal(result.eventId, "evt_ingest_1");
     assert.equal(result.duplicateOf, "evt_ingest_1");
@@ -137,11 +142,11 @@ test("reused source fingerprint with changed usage fails closed", () => {
   const { root, dbPath } = fixture();
   try {
     const ledger = openTokenLedger({ path: dbPath });
-    ledger.ingestUsageEvent(validEvent());
+    ledger.ingestUsageEvent(trustedEvent());
     const changed = validEvent({ event_id: "evt_changed" });
     changed.usage.input_tokens = 9999;
     assert.throws(
-      () => ledger.ingestUsageEvent(changed),
+      () => ledger.ingestUsageEvent(trustedActual(changed)),
       (error) => error instanceof TokenLedgerError && error.code === "INGEST_CONFLICT"
     );
     ledger.close();
@@ -155,11 +160,11 @@ test("same event id with changed canonical data fails closed", () => {
   const { root, dbPath } = fixture();
   try {
     const ledger = openTokenLedger({ path: dbPath });
-    ledger.ingestUsageEvent(validEvent());
+    ledger.ingestUsageEvent(trustedEvent());
     const changed = validEvent();
     changed.identity.resolved_model = "different/model";
     assert.throws(
-      () => ledger.ingestUsageEvent(changed),
+      () => ledger.ingestUsageEvent(trustedActual(changed)),
       (error) => error instanceof TokenLedgerError && error.code === "INGEST_CONFLICT"
     );
     ledger.close();
@@ -172,7 +177,7 @@ test("SQLite blocks raw event update and delete", () => {
   const { root, dbPath } = fixture();
   try {
     const ledger = openTokenLedger({ path: dbPath });
-    ledger.ingestUsageEvent(validEvent());
+    ledger.ingestUsageEvent(trustedEvent());
     ledger.close();
     const raw = new DatabaseSync(dbPath);
     assert.throws(() => raw.exec("UPDATE usage_events SET input_tokens = 5 WHERE event_id='evt_ingest_1'"), /immutable/);
@@ -188,11 +193,11 @@ test("checkpoint advancement commits atomically with insert and duplicate replay
   const { root, dbPath } = fixture();
   try {
     const ledger = openTokenLedger({ path: dbPath });
-    const first = ledger.ingestUsageEvent(validEvent(), { checkpoint: { key: "sessions", cursor: "row-1" } });
+    const first = ledger.ingestUsageEvent(trustedEvent(), { checkpoint: { key: "sessions", cursor: "row-1" } });
     assert.equal(first.checkpointUpdated, true);
     assert.equal(ledger.collectorCheckpoint("hermes-passive", "sessions")?.cursor, "row-1");
 
-    const replay = ledger.ingestUsageEvent(validEvent(), { checkpoint: { key: "sessions", cursor: "row-2" } });
+    const replay = ledger.ingestUsageEvent(trustedEvent(), { checkpoint: { key: "sessions", cursor: "row-2" } });
     assert.equal(replay.status, "duplicate");
     assert.equal(ledger.collectorCheckpoint("hermes-passive", "sessions")?.cursor, "row-2");
     ledger.close();
@@ -206,7 +211,7 @@ test("stores automatic and explicit correlation keys without duplication", () =>
   const { root, dbPath } = fixture();
   try {
     const ledger = openTokenLedger({ path: dbPath });
-    const result = ledger.ingestUsageEvent(validEvent(), {
+    const result = ledger.ingestUsageEvent(trustedEvent(), {
       correlationKeys: [
         { kind: "trace_id", value: "trace-123" },
         { kind: "request_id", value: "req_provider_1" }
@@ -236,7 +241,7 @@ test("read-only ledger rejects ingest", () => {
     writer.close();
     const reader = openTokenLedger({ path: dbPath, mode: "read-only" });
     assert.throws(
-      () => reader.ingestUsageEvent(validEvent()),
+      () => reader.ingestUsageEvent(trustedEvent()),
       (error) => error instanceof TokenLedgerError && error.code === "READ_ONLY"
     );
     reader.close();
@@ -250,11 +255,11 @@ test("invalid correlation/checkpoint metadata inserts nothing", () => {
   try {
     const ledger = openTokenLedger({ path: dbPath });
     assert.throws(
-      () => ledger.ingestUsageEvent(validEvent(), { correlationKeys: [{ kind: "BAD KIND", value: "x" }] }),
+      () => ledger.ingestUsageEvent(trustedEvent(), { correlationKeys: [{ kind: "BAD KIND", value: "x" }] }),
       (error) => error instanceof TokenLedgerError && error.code === "INGEST_INVALID"
     );
     assert.throws(
-      () => ledger.ingestUsageEvent(validEvent(), { checkpoint: { cursor: "" } }),
+      () => ledger.ingestUsageEvent(trustedEvent(), { checkpoint: { cursor: "" } }),
       (error) => error instanceof TokenLedgerError && error.code === "INGEST_INVALID"
     );
     ledger.close();
