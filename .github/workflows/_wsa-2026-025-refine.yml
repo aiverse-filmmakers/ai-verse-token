@@ -1,0 +1,29 @@
+name: WSA-2026-025 Refinement
+
+on:
+  push:
+    branches:
+      - repair/wsa-2026-025-pricing-transactionality
+    paths:
+      - ".github/workflows/_wsa-2026-025-refine.yml"
+      - "scripts/wsa_2026_025_refine.py"
+
+permissions:
+  contents: write
+
+jobs:
+  refine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: repair/wsa-2026-025-pricing-transactionality
+          fetch-depth: 0
+      - run: python scripts/wsa_2026_025_refine.py
+      - run: |
+          git config user.name "AI-VERSE"
+          git config user.email "hello@bogdanpascal.com"
+          git add src/pricing/store.ts src/pricing/sync.ts
+          git diff --cached --exit-code && { echo "No refinement produced"; exit 1; }
+          git commit -m "Bind pricing batch publication to success state"
+          git push origin HEAD:repair/wsa-2026-025-pricing-transactionality
