@@ -383,8 +383,7 @@ export class PricingSynchronizer {
       );
       const etag = resultEtag ?? commonToken(normalized, "etag");
       const digest = resultDigest ?? commonToken(normalized, "content_digest_sha256");
-      const stored = this.store.putMany(normalized);
-      this.store.writeSyncState({
+      const stored = this.store.putManyWithSyncState(normalized, {
         schema_version: "ai-verse-token-price-sync-state/0.1",
         source_id: options.source_id,
         last_attempt_at: nowIso,
