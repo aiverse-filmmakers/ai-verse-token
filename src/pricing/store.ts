@@ -537,15 +537,17 @@ export class PriceSnapshotStore {
   syncState(sourceId: string): PricingSyncState | undefined {
     boundedString(sourceId, "$.source_id", 200);
     const directory = join(this.#stateDir, sha256(sourceId));
-    if (!nodeExists(directory)) return undefined;
-    const directoryInfo = lstatSync(directory);
-    if (directoryInfo.isSymbolicLink() || !directoryInfo.isDirectory()) {
-      throw new PriceSnapshotStoreError("PRICE_SYNC_STATE_INVALID", `unsafe sync-state directory: ${directory}`);
+    let entries: string[] = [];
+    if (nodeExists(directory)) {
+      const directoryInfo = lstatSync(directory);
+      if (directoryInfo.isSymbolicLink() || !directoryInfo.isDirectory()) {
+        throw new PriceSnapshotStoreError("PRICE_SYNC_STATE_INVALID", `unsafe sync-state directory: ${directory}`);
+      }
+      entries = readdirSync(directory).sort();
+      if (entries.length > MAX_STORE_ENTRIES) throw new PriceSnapshotStoreError("PRICE_SYNC_STATE_INVALID", "sync-state directory exceeds supported entry count");
     }
     let latest: PricingSyncState | undefined;
     let latestName = "";
-    const entries = readdirSync(directory).sort();
-    if (entries.length > MAX_STORE_ENTRIES) throw new PriceSnapshotStoreError("PRICE_SYNC_STATE_INVALID", "sync-state directory exceeds supported entry count");
     for (const name of entries) {
       if (!name.endsWith(".json")) continue;
       const path = join(directory, name);
