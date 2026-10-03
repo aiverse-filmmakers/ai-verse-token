@@ -130,6 +130,8 @@ declare module "node:path" {
 declare const process: {
   readonly env: Record<string, string | undefined>;
   readonly platform: string;
+  readonly pid: number;
+  kill(pid: number, signal: 0): boolean;
 };
 
 declare class AbortSignal {}
@@ -156,6 +158,7 @@ declare function fetch(input: string, init?: {
 
 declare module "node:os" {
   export function homedir(): string;
+  export function hostname(): string;
 }
 
 declare interface ImportMeta {
