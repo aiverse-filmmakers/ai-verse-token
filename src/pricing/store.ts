@@ -60,6 +60,7 @@ interface BatchManifest {
   readonly schema_version: typeof BATCH_MANIFEST_VERSION;
   readonly batch_id: string;
   readonly members: readonly BatchManifestMember[];
+  readonly sync_state?: PricingSyncState;
 }
 
 interface CommitLockOwner {
@@ -269,10 +270,17 @@ function parseBatchManifest(path: string, expectedBatchId: string): BatchManifes
         content_sha256: member.content_sha256
       }));
     }
+    const syncState = Object.prototype.hasOwnProperty.call(obj, "sync_state")
+      ? validateSyncState(obj.sync_state)
+      : undefined;
+    if (syncState !== undefined && syncState.last_status !== "updated") {
+      throw new PriceSnapshotStoreError("PRICE_STORE_CORRUPT", `committed batch sync state is not updated: ${path}`);
+    }
     return Object.freeze({
       schema_version: BATCH_MANIFEST_VERSION,
       batch_id: expectedBatchId,
-      members: Object.freeze(members)
+      members: Object.freeze(members),
+      ...(syncState === undefined ? {} : { sync_state: syncState })
     });
   } catch (error) {
     if (error instanceof PriceSnapshotStoreError) throw error;
@@ -372,6 +380,18 @@ export class PriceSnapshotStore {
   }
 
   putMany(snapshotValues: readonly unknown[]): PutSnapshotsResult {
+    return this.#putMany(snapshotValues);
+  }
+
+  putManyWithSyncState(snapshotValues: readonly unknown[], stateValue: PricingSyncState): PutSnapshotsResult {
+    const state = validateSyncState(stateValue);
+    if (state.last_status !== "updated") {
+      throw new PriceSnapshotStoreError("PRICE_SYNC_STATE_INVALID", "snapshot batch sync state must be updated");
+    }
+    return this.#putMany(snapshotValues, state);
+  }
+
+  #putMany(snapshotValues: readonly unknown[], syncState?: PricingSyncState): PutSnapshotsResult {
     const snapshots = snapshotValues.map((value) => validatePriceSnapshot(value));
     const byId = new Map<string, PriceSnapshot>();
     for (const snapshot of snapshots) {
@@ -383,6 +403,16 @@ export class PriceSnapshotStore {
         );
       }
       byId.set(snapshot.price_snapshot_id, snapshot);
+    }
+    if (syncState !== undefined) {
+      for (const snapshot of byId.values()) {
+        if (snapshot.source.source_id !== syncState.source_id) {
+          throw new PriceSnapshotStoreError(
+            "PRICE_SYNC_STATE_INVALID",
+            `snapshot '${snapshot.price_snapshot_id}' source does not match sync state source`
+          );
+        }
+      }
     }
     if (byId.size === 0) {
       return Object.freeze({ inserted: 0, duplicates: 0, snapshots: Object.freeze([]) });
@@ -410,6 +440,7 @@ export class PriceSnapshotStore {
       }
 
       if (pending.length === 0) {
+        if (syncState !== undefined) this.writeSyncState(syncState);
         return Object.freeze({
           inserted: 0,
           duplicates,
@@ -438,7 +469,8 @@ export class PriceSnapshotStore {
         const manifest: BatchManifest = Object.freeze({
           schema_version: BATCH_MANIFEST_VERSION,
           batch_id: batchId,
-          members: Object.freeze(members)
+          members: Object.freeze(members),
+          ...(syncState === undefined ? {} : { sync_state: syncState })
         });
         writeFileSync(
           join(stageDirectory, "manifest.json"),
@@ -531,13 +563,35 @@ export class PriceSnapshotStore {
       if (state.source_id !== sourceId) {
         throw new PriceSnapshotStoreError("PRICE_SYNC_STATE_INVALID", `${path}: source_id mismatch`);
       }
+      const candidateName = `state/${name}`;
       if (
         latest === undefined
         || Date.parse(state.last_attempt_at) > Date.parse(latest.last_attempt_at)
-        || (state.last_attempt_at === latest.last_attempt_at && name > latestName)
+        || (state.last_attempt_at === latest.last_attempt_at && candidateName > latestName)
       ) {
         latest = state;
-        latestName = name;
+        latestName = candidateName;
+      }
+    }
+
+    const batchEntries = readdirSync(this.#batchesDir).sort();
+    if (batchEntries.length > MAX_STORE_ENTRIES) {
+      throw new PriceSnapshotStoreError("PRICE_SYNC_STATE_INVALID", "pricing batch directory exceeds supported entry count");
+    }
+    for (const batchId of batchEntries) {
+      const batchDirectory = join(this.#batchesDir, batchId);
+      assertSafeDirectory(batchDirectory, "PRICE_STORE_CORRUPT");
+      const manifest = parseBatchManifest(join(batchDirectory, "manifest.json"), batchId);
+      const state = manifest.sync_state;
+      if (state === undefined || state.source_id !== sourceId) continue;
+      const candidateName = `batch/${batchId}`;
+      if (
+        latest === undefined
+        || Date.parse(state.last_attempt_at) > Date.parse(latest.last_attempt_at)
+        || (state.last_attempt_at === latest.last_attempt_at && candidateName > latestName)
+      ) {
+        latest = state;
+        latestName = candidateName;
       }
     }
     return latest;
