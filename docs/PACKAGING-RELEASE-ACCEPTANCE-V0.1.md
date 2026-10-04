@@ -138,11 +138,11 @@ The complete suite verifies all first-release laws across focused and integratio
 
 ## Verification status
 
-The public-beta.1 normal suite passes **256 / 256** tests and the serial release-acceptance stage passes **3 / 3**, for **259 / 259** executed tests across the normal and release stages. The clean packed-install acceptance passes from the tarball artifact rather than relying on the source checkout.
+The public-beta.3 normal suite passes **268 / 268** tests and the serial release-acceptance stage passes **3 / 3**, for **271 / 271** executed checks across the normal and release stages. The clean packed-install acceptance passes from the tarball artifact rather than relying on the source checkout.
 
-Beta.1 retains ledger format **2**. It intentionally fails closed on incompatible ledger formats rather than silently mutating or guessing a migration.
+The earlier beta.1 ledger-format result is historical evidence; beta.3 retains ledger format **2** and intentionally fails closed on incompatible ledger formats rather than silently mutating or guessing a migration.
 
-Local release verification on Node 22 passes the full public-beta suite plus the serial release acceptance stage. The GitHub Actions six-leg Node 22/24 cross-platform matrix is configured and contract-tested, and beta.3 must not be sealed until the canonical GitHub Actions matrix passes.
+Local release verification on Node 22 passes the full public-beta.3 suite plus the serial release-acceptance stage. The canonical six-leg Node 22/24 matrix passed at exact merged beta.3 head `69b15e59ad117e147730dbc30dfef7cbc083c8de` in GitHub Actions run `37151877242` (Ubuntu, macOS and Windows; Node 22 and 24).
 
 ## Final release law
 

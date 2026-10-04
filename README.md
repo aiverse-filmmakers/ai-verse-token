@@ -183,6 +183,6 @@ Clean packed install: PASS
 npm pack dry-run: PASS
 ```
 
-The repository includes a six-leg GitHub Actions matrix for Linux, macOS and Windows on Node 22 and 24. Hosted cross-platform verification is required on the canonical GitHub repository before the beta.3 tag is sealed.
+The repository includes a six-leg GitHub Actions matrix for Linux, macOS and Windows on Node 22 and 24. The beta.3 matrix passed at merged head `69b15e59ad117e147730dbc30dfef7cbc083c8de` in run `37151877242`.
 
 See [`docs/PACKAGING-RELEASE-ACCEPTANCE-V0.1.md`](docs/PACKAGING-RELEASE-ACCEPTANCE-V0.1.md) and [`docs/HARDENING-AUDIT-2026-09-12.md`](docs/HARDENING-AUDIT-2026-09-12.md).
